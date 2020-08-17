@@ -1,0 +1,39 @@
+datasource db {
+  provider = "postgresql"
+  url = "***"
+}
+
+generator prisma_client {
+  provider = "prisma-client-js"
+}
+
+model Player {
+  id            String             @default(uuid()) @id
+  createdAt     DateTime           @default(now())
+  discordId     String             @unique
+  token         String
+  refreshToken  String
+  tokenExpires  DateTime
+  username      String
+  discriminator String
+  matches       MatchesOnPlayers[]
+  points        Int                @default(0)
+}
+
+model Match {
+  id         String             @default(uuid()) @id
+  createdAt  DateTime           @default(now())
+  reportedAt DateTime?
+  players    MatchesOnPlayers[]
+}
+
+model MatchesOnPlayers {
+  player    Player   @relation(fields: [playerId], references: [id])
+  playerId  String
+  match     Match    @relation(fields: [matchId], references: [id])
+  matchId   String
+  createdAt DateTime @default(now())
+  won       Boolean
+
+  @@id([playerId, matchId])
+}
