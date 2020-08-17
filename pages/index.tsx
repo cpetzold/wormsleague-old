@@ -3,6 +3,8 @@ import gql from "graphql-tag";
 import { useQuery } from "@apollo/react-hooks";
 import withApollo from "../lib/withApollo";
 
+import { Flex } from "theme-ui";
+
 const HOME_QUERY = gql`
   {
     me {
@@ -19,27 +21,28 @@ function Home() {
   if (loading) return null;
 
   return (
-    <div>
+    <Flex
+      sx={{
+        width: "100vw",
+        height: "100vh",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <Head>
         <title>Worms League</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <img src="/drill.gif" />
       {me ? (
         <div>
           Hi {me.username}#{me.discriminator}
         </div>
       ) : (
-        <a href="api/discord/authorize">Login</a>
+        <a href="/api/discord/authorize">
+          <img src="/drill.gif" />
+        </a>
       )}
-
-      <style global jsx>{`
-        body {
-          background: black;
-          color: white;
-        }
-      `}</style>
-    </div>
+    </Flex>
   );
 }
 
