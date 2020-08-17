@@ -1,9 +1,10 @@
+import fetch from "cross-fetch";
 import * as dateFns from "date-fns";
 import { NextApiResponse } from "next";
 import { log } from "nexus";
 import { PrismaClient } from "nexus-plugin-prisma/client";
-import { authorizeConfig, discordOauth } from "../../../lib/discord";
 import { ApiRequest, runMiddleware } from "../../../lib/apiUtils";
+import { authorizeConfig, discordOauth } from "../../../lib/discord";
 import { session } from "../../../lib/middleware";
 
 export default async (req: ApiRequest, res: NextApiResponse) => {
