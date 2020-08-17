@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "nexus build --deployment vercel && next build",
+    "build": "prisma migrate up --experimental && nexus build --deployment vercel && next build",
     "start": "next start",
     "nexus:reflection": "nexus dev --reflection --entrypoint pages/api/graphql.ts"
   },
