@@ -13,7 +13,7 @@ export const discordOauth = simpleOauth2.create({
 });
 
 export const authorizeConfig = {
-  redirect_uri: "http://localhost:3000/api/discord/callback",
+  redirect_uri: process.env.DISCORD_REDIRECT_URL,
   scope: ["identify", "email", "guilds.join", "gdm.join"].join(" "),
 };
 
