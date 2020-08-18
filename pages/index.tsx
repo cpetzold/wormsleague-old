@@ -17,6 +17,8 @@ const HOME_QUERY = gql`
 const TEST_PLAYERS = [
   {
     score: 1200,
+    wins: 0,
+    losses: 0,
     username: "Syc",
     countryCode: "US",
     clan: { tag: "SfX" },
@@ -25,12 +27,16 @@ const TEST_PLAYERS = [
   },
   {
     score: 1500,
+    wins: 15,
+    losses: 3,
     username: "Mablak",
     countryCode: "US",
     clan: { tag: "SfX" },
   },
   {
     score: 1460,
+    wins: 13,
+    losses: 2,
     username: "KRD",
     countryCode: "SI",
     clan: { tag: "SfX" },
@@ -39,6 +45,8 @@ const TEST_PLAYERS = [
   },
   {
     score: 1337,
+    wins: 1337,
+    losses: 1337,
     username: "Deadcode",
     countryCode: "US",
   },

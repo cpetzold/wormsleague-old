@@ -6,7 +6,8 @@ export default function Standings({ players }) {
   return (
     <Grid
       sx={{
-        gridTemplateColumns: "min-content auto min-content min-content",
+        gridTemplateColumns:
+          "min-content auto min-content min-content min-content min-content",
         columnGap: "medium",
         rowGap: "medium",
         alignItems: "center",
@@ -15,28 +16,34 @@ export default function Standings({ players }) {
       <Column>Rank</Column>
       <Column>Player</Column>
       <Column>Country</Column>
+      <Column>Wins</Column>
+      <Column>Losses</Column>
       <Column>Score</Column>
-      {players.map(({ username, avatar, clan, countryCode, score }, i) => (
-        <>
-          <Box sx={{ justifySelf: "center" }}>{i + 1}</Box>
-          <Flex sx={{ alignItems: "center" }}>
-            <Avatar
-              size={42}
-              sx={{ backgroundColor: "border" }}
-              src={avatar || `https://robohash.org/${username}.png`}
-            />
-            &ensp;
-            {clan && (
-              <>
-                <Link href="#">{clan.tag}</Link>&nbsp;
-              </>
-            )}
-            {username}
-          </Flex>
-          <Flag size={42} countryCode={countryCode} />
-          <Box>{score}</Box>
-        </>
-      ))}
+      {players.map(
+        ({ username, avatar, clan, countryCode, wins, losses, score }, i) => (
+          <>
+            <Box sx={{ justifySelf: "center" }}>{i + 1}</Box>
+            <Flex sx={{ alignItems: "center" }}>
+              <Avatar
+                size={42}
+                sx={{ backgroundColor: "border" }}
+                src={avatar || `https://robohash.org/${username}.png`}
+              />
+              &ensp;
+              {clan && (
+                <>
+                  <Link href="#">{clan.tag}</Link>&nbsp;
+                </>
+              )}
+              {username}
+            </Flex>
+            <Flag size={42} countryCode={countryCode} />
+            <Box>{wins}</Box>
+            <Box>{losses}</Box>
+            <Box>{score}</Box>
+          </>
+        )
+      )}
     </Grid>
   );
 }

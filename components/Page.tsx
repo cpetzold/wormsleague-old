@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function Page({ children }) {
   return (
     <Flex sx={{ flexDirection: "row", justifyContent: "center" }}>
-      <Flex sx={{ flexDirection: "column", width: "100%", maxWidth: 800 }}>
+      <Flex sx={{ flexDirection: "column", width: "100%", maxWidth: 920 }}>
         <Header />
         {children}
       </Flex>
