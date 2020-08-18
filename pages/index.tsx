@@ -19,16 +19,23 @@ const TEST_PLAYERS = [
     score: 1200,
     username: "Syc",
     countryCode: "US",
+    clan: { tag: "SfX" },
+    avatar:
+      "https://cdn.discordapp.com/avatars/107678855325573120/dc564862764261169aedd894d3ebbddf.png?size=256",
   },
   {
     score: 1500,
     username: "Mablak",
     countryCode: "US",
+    clan: { tag: "SfX" },
   },
   {
     score: 1460,
     username: "KRD",
     countryCode: "SI",
+    clan: { tag: "SfX" },
+    avatar:
+      "https://cdn.discordapp.com/avatars/230108863183978496/848adffd735edc6ebbf43b177de2b3f2.png?size=256",
   },
   {
     score: 1337,

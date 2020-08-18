@@ -5,6 +5,7 @@ export default {
     monospace: "Menlo, monospace",
   },
   fontSizes: {
+    small: 16,
     body: 20,
   },
   fontWeights: {
