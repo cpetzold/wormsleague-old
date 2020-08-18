@@ -29,8 +29,8 @@ const TEST_PLAYERS = [
     score: 1500,
     wins: 15,
     losses: 3,
-    username: "Mablak",
-    countryCode: "US",
+    username: "M3ntal",
+    countryCode: "GB",
     clan: { tag: "SfX" },
   },
   {
