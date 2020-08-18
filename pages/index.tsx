@@ -1,9 +1,9 @@
-import Head from "next/head";
-import gql from "graphql-tag";
 import { useQuery } from "@apollo/react-hooks";
+import gql from "graphql-tag";
+import Head from "next/head";
+import Page from "../components/Page";
+import Standings from "../components/Standings";
 import withApollo from "../lib/withApollo";
-
-import { Flex } from "theme-ui";
 
 const HOME_QUERY = gql`
   {
@@ -14,6 +14,29 @@ const HOME_QUERY = gql`
   }
 `;
 
+const TEST_PLAYERS = [
+  {
+    score: 1200,
+    username: "Syc",
+    countryCode: "US",
+  },
+  {
+    score: 1500,
+    username: "Mablak",
+    countryCode: "US",
+  },
+  {
+    score: 1460,
+    username: "KRD",
+    countryCode: "SI",
+  },
+  {
+    score: 1337,
+    username: "Deadcode",
+    countryCode: "US",
+  },
+];
+
 function Home() {
   const { loading, data } = useQuery(HOME_QUERY);
   const me = data?.me;
@@ -21,28 +44,13 @@ function Home() {
   if (loading) return null;
 
   return (
-    <Flex
-      sx={{
-        width: "100vw",
-        height: "100vh",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
+    <Page>
       <Head>
         <title>Worms League</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      {me ? (
-        <div>
-          Hi {me.username}#{me.discriminator}
-        </div>
-      ) : (
-        <a href="/api/discord/authorize">
-          <img src="/drill.gif" />
-        </a>
-      )}
-    </Flex>
+      <Standings players={TEST_PLAYERS.sort((a, b) => b.score - a.score)} />
+    </Page>
   );
 }
 

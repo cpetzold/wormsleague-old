@@ -1,11 +1,11 @@
 export default {
   fonts: {
-    body: "system-ui, sans-serif",
-    heading: "system-ui, sans-serif",
+    body: "'Inter', system-ui, sans-serif",
+    heading: "'Inter', system-ui, sans-serif",
     monospace: "Menlo, monospace",
   },
   fontSizes: {
-    body: 18,
+    body: 20,
   },
   fontWeights: {
     body: 400,
@@ -13,19 +13,15 @@ export default {
   },
   colors: {
     text: "#fff",
-    background: "#000",
+    background: "#0e0e0e",
+    border: "#333",
     primary: "#07c",
     secondary: "#05a",
     muted: "#f6f6f6",
-    modes: {
-      light: {
-        text: "#000",
-        background: "#fff",
-        primary: "#0cf",
-        secondary: "#09c",
-        muted: "#111",
-      },
-    },
+  },
+  space: {
+    small: 8,
+    medium: 16,
   },
   styles: {
     root: {

@@ -24,6 +24,7 @@
     "nexus": "^0.26.2-next.3",
     "nexus-plugin-prisma": "^0.17.0",
     "react": "16.13.1",
+    "react-country-flag": "^2.3.0",
     "react-dom": "16.13.1",
     "simple-oauth2": "^3.4.0",
     "theme-ui": "^0.3.1"
