@@ -21,6 +21,7 @@ export default function Standings({ players }) {
           <Box sx={{ justifySelf: "center" }}>{i + 1}</Box>
           <Flex sx={{ alignItems: "center" }}>
             <Avatar
+              size={42}
               sx={{ backgroundColor: "border" }}
               src={avatar || `https://robohash.org/${username}.png`}
             />
@@ -32,7 +33,7 @@ export default function Standings({ players }) {
             )}
             {username}
           </Flex>
-          <Flag countryCode={countryCode} />
+          <Flag size={42} countryCode={countryCode} />
           <Box>{score}</Box>
         </>
       ))}

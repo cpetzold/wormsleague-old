@@ -5,7 +5,7 @@ export default function Flag({ countryCode, size = 32, ...props }) {
     <ReactCountryFlag
       countryCode={countryCode}
       svg
-      style={{ width: size }}
+      style={{ width: size, height: size * (3 / 4) }}
       {...props}
     />
   );
