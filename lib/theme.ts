@@ -15,6 +15,7 @@ export default {
   colors: {
     text: "#fff",
     background: "#0e0e0e",
+    backgroundOverlay: "#0e0e0ef0",
     border: "#333",
     primary: "#07c",
     secondary: "#05a",
@@ -23,6 +24,8 @@ export default {
   space: {
     small: 8,
     medium: 16,
+    large: 20,
+    xlarge: 32,
   },
   styles: {
     root: {
