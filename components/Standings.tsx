@@ -7,7 +7,7 @@ export default function Standings({ players }) {
     <Grid
       sx={{
         gridTemplateColumns:
-          "min-content auto min-content min-content min-content min-content",
+          "min-content auto min-content min-content min-content",
         columnGap: "medium",
         rowGap: "medium",
         alignItems: "center",
@@ -18,11 +18,10 @@ export default function Standings({ players }) {
       <Column>Country</Column>
       <Column>Wins</Column>
       <Column>Losses</Column>
-      <Column>Score</Column>
       {players.map(
-        ({ username, avatar, clan, countryCode, wins, losses, score }, i) => (
+        ({ username, avatar, clan, countryCode, rank, wins, losses }) => (
           <>
-            <Box sx={{ justifySelf: "center" }}>{i + 1}</Box>
+            <Box sx={{ justifySelf: "center" }}>{rank}</Box>
             <Flex sx={{ alignItems: "center" }}>
               <Avatar
                 size={42}
@@ -40,7 +39,6 @@ export default function Standings({ players }) {
             <Flag size={42} countryCode={countryCode} />
             <Box>{wins}</Box>
             <Box>{losses}</Box>
-            <Box>{score}</Box>
           </>
         )
       )}

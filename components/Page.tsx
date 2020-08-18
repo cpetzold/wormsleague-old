@@ -10,11 +10,10 @@ export default function Page({ children }) {
           width: "100%",
           maxWidth: 920,
           padding: "large",
-          backgroundColor: "backgroundOverlay",
         }}
       >
         <Header />
-        {children}
+        <Box sx={{ paddingY: "medium" }}>{children}</Box>
       </Flex>
 
       <Box
@@ -23,6 +22,7 @@ export default function Page({ children }) {
           height: "100vh",
           position: "fixed",
           background: "url(/terrain.png) no-repeat bottom center",
+          opacity: 0.05,
           zIndex: -1,
         }}
       />
@@ -34,10 +34,10 @@ function Header() {
   return (
     <Flex sx={{ justifyContent: "space-between", paddingY: "medium" }}>
       <Heading>Worms League</Heading>
-      <Grid sx={{ gridAutoFlow: "column", gap: "medium" }}>
+      {/* <Grid sx={{ gridAutoFlow: "column", gap: "medium" }}>
         <Link href="#">Standings</Link>
         <Link href="#">Players</Link>
-      </Grid>
+      </Grid> */}
     </Flex>
   );
 }

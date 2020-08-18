@@ -16,7 +16,7 @@ const HOME_QUERY = gql`
 
 const TEST_PLAYERS = [
   {
-    score: 1200,
+    rank: 4,
     wins: 0,
     losses: 0,
     username: "Syc",
@@ -26,7 +26,7 @@ const TEST_PLAYERS = [
       "https://cdn.discordapp.com/avatars/107678855325573120/dc564862764261169aedd894d3ebbddf.png?size=256",
   },
   {
-    score: 1500,
+    rank: 1,
     wins: 15,
     losses: 3,
     username: "M3ntal",
@@ -34,7 +34,7 @@ const TEST_PLAYERS = [
     clan: { tag: "SfX" },
   },
   {
-    score: 1460,
+    rank: 3,
     wins: 13,
     losses: 2,
     username: "KRD",
@@ -44,7 +44,7 @@ const TEST_PLAYERS = [
       "https://cdn.discordapp.com/avatars/230108863183978496/848adffd735edc6ebbf43b177de2b3f2.png?size=256",
   },
   {
-    score: 1337,
+    rank: 2,
     wins: 1337,
     losses: 1337,
     username: "Deadcode",
@@ -64,7 +64,7 @@ function Home() {
         <title>Worms League</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Standings players={TEST_PLAYERS.sort((a, b) => b.score - a.score)} />
+      <Standings players={TEST_PLAYERS.sort((a, b) => a.rank - b.rank)} />
     </Page>
   );
 }
