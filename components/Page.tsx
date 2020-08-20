@@ -1,9 +1,14 @@
 import { Box, Flex, Grid, Heading } from "theme-ui";
 import Link from "next/link";
+import Head from "next/head";
 
 export default function Page({ children }) {
   return (
     <Flex sx={{ flexDirection: "row", justifyContent: "center" }}>
+      <Head>
+        <title>Worms League</title>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
       <Flex
         sx={{
           flexDirection: "column",

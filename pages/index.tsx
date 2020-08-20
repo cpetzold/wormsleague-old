@@ -1,6 +1,5 @@
 import { useQuery } from "@apollo/react-hooks";
 import gql from "graphql-tag";
-import Head from "next/head";
 import Page from "../components/Page";
 import Standings from "../components/Standings";
 import withApollo from "../lib/withApollo";
@@ -60,10 +59,6 @@ function Home() {
 
   return (
     <Page>
-      <Head>
-        <title>Worms League</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <Standings players={TEST_PLAYERS.sort((a, b) => a.rank - b.rank)} />
     </Page>
   );
