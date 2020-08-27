@@ -39,10 +39,9 @@ function Header() {
   return (
     <Flex sx={{ justifyContent: "space-between", paddingY: "medium" }}>
       <Heading>Worms League</Heading>
-      <Grid sx={{ gridAutoFlow: "column", gap: "medium" }}>
+      {/* <Grid sx={{ gridAutoFlow: "column", gap: "medium" }}>
         <Link href="/">Standings</Link>
-        <Link href="/report">Report</Link>
-      </Grid>
+      </Grid> */}
     </Flex>
   );
 }

@@ -8,16 +8,14 @@ generator prisma_client {
 }
 
 model User {
-  id            String   @default(uuid()) @id
-  createdAt     DateTime @default(now())
-  discordId     String   @unique
-  token         String
-  refreshToken  String
-  tokenExpires  DateTime
-  username      String
-  discriminator String
-  ranks         Rank[]
-  playedGames   Player[]
+  id        String   @default(uuid()) @id
+  createdAt DateTime @default(now())
+  username  String   @unique
+  email     String   @unique
+  password  String
+
+  ranks       Rank[]
+  playedGames Player[]
 }
 
 model Game {

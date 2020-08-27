@@ -105,7 +105,7 @@
     {
       "tag": "CreateField",
       "model": "User",
-      "field": "discordId",
+      "field": "username",
       "type": "String",
       "arity": "Required"
     },
@@ -115,7 +115,7 @@
         "path": {
           "tag": "Field",
           "model": "User",
-          "field": "discordId"
+          "field": "username"
         },
         "directive": "unique"
       }
@@ -123,35 +123,25 @@
     {
       "tag": "CreateField",
       "model": "User",
-      "field": "token",
+      "field": "email",
       "type": "String",
       "arity": "Required"
     },
     {
-      "tag": "CreateField",
-      "model": "User",
-      "field": "refreshToken",
-      "type": "String",
-      "arity": "Required"
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "User",
+          "field": "email"
+        },
+        "directive": "unique"
+      }
     },
     {
       "tag": "CreateField",
       "model": "User",
-      "field": "tokenExpires",
-      "type": "DateTime",
-      "arity": "Required"
-    },
-    {
-      "tag": "CreateField",
-      "model": "User",
-      "field": "username",
-      "type": "String",
-      "arity": "Required"
-    },
-    {
-      "tag": "CreateField",
-      "model": "User",
-      "field": "discriminator",
+      "field": "password",
       "type": "String",
       "arity": "Required"
     },

@@ -24,6 +24,7 @@ The `JSON` scalar type represents JSON objects as specified by [ECMA-404](http:/
 scalar Json
 
 type Mutation {
+  login(password: String!, usernameOrEmail: String!): User
   reportWin(loserId: String!, replay: String!): Game
 }
 
@@ -41,7 +42,6 @@ type Query {
 }
 
 type User {
-  discriminator: String!
   id: String!
   playedGames(after: PlayerWhereUniqueInput, before: PlayerWhereUniqueInput, first: Int, last: Int): [Player!]!
   username: String!

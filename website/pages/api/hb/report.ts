@@ -1,13 +1,12 @@
 import FormData from "form-data";
 import fs from "fs";
 import multer from "multer";
-import { NextApiResponse } from "next";
+import { NextApiResponse, NextApiRequest } from "next";
 import nextConnect from "next-connect";
 import fetch from "node-fetch";
 import path from "path";
-import { ApiRequest } from "../../lib/apiUtils";
 
-type ApiRequestWithFile = ApiRequest & {
+type ApiRequestWithFile = NextApiRequest & {
   file: Express.Multer.File;
 };
 

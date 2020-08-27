@@ -1,13 +1,17 @@
-import app, {
-  schema,
-  server,
-  use,
-} from "nexus";
-import { prisma } from "nexus-plugin-prisma";
-import "../../lib/graphql/schema";
-import { runMiddleware } from "../../lib/apiUtils";
-import { session } from "../../lib/middleware";
-import { ContextAdderLens } from "nexus/dist/runtime/schema/schema";
+import { PrismaClient } from "@prisma/client";
+import { ApolloServer } from "apollo-server-micro";
+import cookieSession from "micro-cookie-session";
+import { NextApiRequest, NextApiResponse } from "next";
+import { send } from "micro";
+import schema from "../../lib/graphql/schema";
+
+const session = cookieSession({
+  secret: process.env.SESSION_SECRET,
+  maxAge: 24 * 60 * 60 * 1000,
+  httpOnly: false,
+});
+
+const db = new PrismaClient();
 
 export const config = {
   api: {
@@ -15,22 +19,25 @@ export const config = {
   },
 };
 
-use(prisma());
-app.assemble();
-
-type RequestWithSession = Request & {
-  session: {
-    userId?: string;
-  };
-};
-
-schema.addToContext(
-  async ({ req, res }: ContextAdderLens & { req: RequestWithSession }) => {
-    await runMiddleware(req, res, session);
-    return {
-      userId: req.session?.userId as string,
-    };
+const server = new ApolloServer({
+  schema,
+  introspection: true,
+  playground: true,
+  context(ctx) {
+    const { req } = ctx;
+    return { ...ctx, db, userId: req.session?.userId };
   },
-);
+});
 
-export default server.handlers.graphql;
+export default (
+  req: NextApiRequest & { session: Express.Session },
+  res: NextApiResponse,
+) => {
+  session(req, res);
+
+  if (req.method === "OPTIONS") {
+    return send(res, 200);
+  } else {
+    return server.createHandler({ path: "/api/graphql" })(req, res);
+  }
+};
