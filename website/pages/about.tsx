@@ -1,9 +1,5 @@
-/** @jsx jsx */
-import { jsx } from "theme-ui";
-
-import { Heading, Box, Styled } from "theme-ui";
-import Page from "../components/Page";
+import { Box } from "theme-ui";
 
 export default function About() {
-  return <Page>TODO</Page>;
+  return <Box>TODO</Box>;
 }

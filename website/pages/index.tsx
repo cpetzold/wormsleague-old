@@ -1,6 +1,5 @@
 import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
-import Page from "../components/Page";
 import Standings from "../components/Standings";
 import withApollo from "../lib/withApollo";
 
@@ -57,11 +56,7 @@ function Home() {
 
   if (loading) return null;
 
-  return (
-    <Page>
-      <Standings players={TEST_PLAYERS.sort((a, b) => a.rank - b.rank)} />
-    </Page>
-  );
+  return <Standings players={TEST_PLAYERS.sort((a, b) => a.rank - b.rank)} />;
 }
 
 export default withApollo(Home);

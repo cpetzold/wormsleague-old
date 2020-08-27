@@ -2,9 +2,8 @@ import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { Box, Button, Flex, Grid, Input, Label } from "theme-ui";
 import withApollo from "../lib/withApollo";
-import Page from "../components/Page";
-import { Grid, Input, Label, Box, Button, Flex } from "theme-ui";
 
 const HOME_QUERY = gql`
   {
@@ -32,38 +31,36 @@ function Login() {
   if (loading) return null;
 
   return (
-    <Page>
-      <Flex sx={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
-        <Grid
-          as="form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            console.log({ username, password });
-          }}
-          sx={{ width: "100%", maxWidth: 300 }}
-        >
-          <Box>
-            <Label htmlFor="username">Username or Email</Label>
-            <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </Box>
-          <Box>
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </Box>
+    <Flex sx={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
+      <Grid
+        as="form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log({ username, password });
+        }}
+        sx={{ width: "100%", maxWidth: 300 }}
+      >
+        <Box>
+          <Label htmlFor="username">Username or Email</Label>
+          <Input
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </Box>
+        <Box>
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </Box>
 
-          <Button>Log in</Button>
-        </Grid>
-      </Flex>
-    </Page>
+        <Button>Log in</Button>
+      </Grid>
+    </Flex>
   );
 }
 
