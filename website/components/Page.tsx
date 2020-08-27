@@ -1,6 +1,7 @@
-import { Box, Flex, Grid, Heading } from "theme-ui";
-import Link from "next/link";
 import Head from "next/head";
+import NextLink from "next/link";
+import { Box, Flex, Grid, Heading, Text, Link } from "theme-ui";
+import { useRouter } from "next/dist/client/router";
 
 export default function Page({ children }) {
   return (
@@ -15,10 +16,13 @@ export default function Page({ children }) {
           width: "100%",
           maxWidth: 920,
           padding: 4,
+          minHeight: "100vh",
         }}
       >
         <Header />
-        <Box sx={{ paddingY: 4 }}>{children}</Box>
+        <Flex sx={{ flexDirection: "column", paddingY: 4, flex: 1 }}>
+          {children}
+        </Flex>
       </Flex>
 
       <Box
@@ -38,10 +42,25 @@ export default function Page({ children }) {
 function Header() {
   return (
     <Flex sx={{ justifyContent: "space-between", paddingY: "medium" }}>
-      <Heading>Worms League</Heading>
-      {/* <Grid sx={{ gridAutoFlow: "column", gap: "medium" }}>
-        <Link href="/">Standings</Link>
-      </Grid> */}
+      <NextLink href="/">
+        <Heading sx={{ cursor: "pointer" }}>Worms League</Heading>
+      </NextLink>
+      <Grid sx={{ gridAutoFlow: "column", gap: 4 }}>
+        <NavLink href="/">Standings</NavLink>
+        {/* <NavLink href="/about">About</NavLink> */}
+        <NavLink href="/signup">Sign up</NavLink>
+        <NavLink href="/login">Log in</NavLink>
+      </Grid>
     </Flex>
+  );
+}
+
+function NavLink({ href, children }) {
+  const router = useRouter();
+  const active = router.pathname === href;
+  return (
+    <NextLink href={href} passHref>
+      <Link sx={{ color: active ? "text" : "muted" }}>{children}</Link>
+    </NextLink>
   );
 }

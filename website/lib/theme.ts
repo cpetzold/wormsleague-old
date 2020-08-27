@@ -41,7 +41,7 @@ export default {
     background: "#0e0e0e",
     primary: "#07c",
     secondary: "#30c",
-    muted: "#f6f6f6",
+    muted: "#aaa",
   },
   styles: {
     root: {
