@@ -1,20 +1,21 @@
 import {
+  arg,
   makeSchema,
   mutationType,
   objectType,
   queryType,
-  stringArg,
   scalarType,
-  arg,
+  stringArg,
 } from "@nexus/schema";
-import { GraphQLUpload } from "graphql-upload";
-import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
 import { PrismaClient } from "@prisma/client";
-import { map } from "ramda";
-import parseGameLog from "../parseGameLog";
 import { MicroRequest } from "apollo-server-micro/dist/types";
+import bcrypt from "bcrypt";
+import { GraphQLUpload } from "graphql-upload";
 import { ServerResponse } from "http";
+import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
+import { map } from "ramda";
 import { login } from "../auth";
+import parseGameLog from "../parseGameLog";
 
 const SALT_ROUNDS = 10;
 
