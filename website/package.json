@@ -6,9 +6,8 @@
     "generate:prisma": "prisma generate",
     "generate:nexus": "ts-node --transpile-only lib/graphql/schema",
     "generate": "npm -s run generate:prisma && npm -s run generate:nexus",
-    "postinstall": "npm -s run generate",
     "dev": "next dev",
-    "build": "prisma migrate up --experimental && nexus build --deployment vercel && next build",
+    "build": "prisma migrate up --experimental && npm -s run generate && next build",
     "start": "next start"
   },
   "dependencies": {
