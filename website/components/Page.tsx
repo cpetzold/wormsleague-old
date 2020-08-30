@@ -1,66 +1,104 @@
+import {
+  AppBar,
+  Box,
+  Button,
+  createStyles,
+  makeStyles,
+  Theme,
+  Toolbar,
+  Typography,
+} from "@material-ui/core";
 import Head from "next/head";
-import NextLink from "next/link";
-import { Box, Flex, Grid, Heading, Text, Link } from "theme-ui";
+import { useState } from "react";
+import withApollo from "../lib/withApollo";
+import SignupDialog from "./SignupDialog";
+import LoginDialog from "./LoginDialog";
+import gql from "graphql-tag";
+import { useQuery, useMutation } from "@apollo/client";
 import { useRouter } from "next/dist/client/router";
 
-export default function Page({ children }) {
+const useStyles = makeStyles((theme: Theme) =>
+  createStyles({
+    button: {
+      margin: theme.spacing(1),
+    },
+  })
+);
+
+const PAGE_QUERY = gql`
+  {
+    me {
+      username
+    }
+  }
+`;
+
+const LOGOUT_MUTATION = gql`
+  mutation Logout {
+    logout
+  }
+`;
+
+function Page({ children }) {
+  const router = useRouter();
+  const classes = useStyles();
+  const [signupOpen, setSignupOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  const [logout] = useMutation(LOGOUT_MUTATION);
+  const { loading, data } = useQuery(PAGE_QUERY);
+  const me = data?.me;
+
+  if (loading) return null;
+
   return (
-    <Flex sx={{ flexDirection: "row", justifyContent: "center" }}>
+    <>
       <Head>
         <title>Worms League</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Flex
-        sx={{
-          flexDirection: "column",
-          width: "100%",
-          maxWidth: 920,
-          padding: 4,
-          minHeight: "100vh",
-        }}
-      >
-        <Header />
-        <Flex sx={{ flexDirection: "column", paddingY: 4, flex: 1 }}>
-          {children}
-        </Flex>
-      </Flex>
+      <AppBar color="inherit" position="sticky">
+        <Toolbar>
+          <Box display="flex" alignItems="center" flexGrow={1}>
+            <Typography variant="h5">WormsLeague</Typography>
+            &emsp;
+            <img src="/victory.svg" height={40} />
+          </Box>
 
-      <Box
-        sx={{
-          width: "100vw",
-          height: "100vh",
-          position: "fixed",
-          background: "url(/terrain.png) no-repeat bottom center",
-          opacity: 0.05,
-          zIndex: -1,
-        }}
-      />
-    </Flex>
+          <Box justifySelf="flex-end">
+            {me ? (
+              <>
+                Hi, {me.username}{" "}
+                <Button
+                  onClick={async () => {
+                    await logout();
+                    router.reload();
+                  }}
+                >
+                  Log out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => setLoginOpen(true)}>Log in</Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  className={classes.button}
+                  onClick={() => setSignupOpen(true)}
+                >
+                  Sign up
+                </Button>
+              </>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+      {children}
+      <SignupDialog open={signupOpen} onClose={() => setSignupOpen(false)} />
+      <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
+    </>
   );
 }
 
-function Header() {
-  return (
-    <Flex sx={{ justifyContent: "space-between", paddingY: "medium" }}>
-      <NextLink href="/">
-        <Heading sx={{ cursor: "pointer" }}>Worms League</Heading>
-      </NextLink>
-      <Grid sx={{ gridAutoFlow: "column", gap: 4 }}>
-        <NavLink href="/">Standings</NavLink>
-        {/* <NavLink href="/about">About</NavLink> */}
-        <NavLink href="/signup">Sign up</NavLink>
-        <NavLink href="/login">Log in</NavLink>
-      </Grid>
-    </Flex>
-  );
-}
-
-function NavLink({ href, children }) {
-  const router = useRouter();
-  const active = router.pathname === href;
-  return (
-    <NextLink href={href} passHref>
-      <Link sx={{ color: active ? "text" : "muted" }}>{children}</Link>
-    </NextLink>
-  );
-}
+export default withApollo(Page);

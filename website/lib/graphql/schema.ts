@@ -8,19 +8,22 @@ import {
   stringArg,
 } from "@nexus/schema";
 import { PrismaClient } from "@prisma/client";
-import { MicroRequest } from "apollo-server-micro/dist/types";
+import { NowRequest } from "@vercel/node";
+import { GraphQLUpload } from "apollo-server-core";
 import bcrypt from "bcrypt";
-import { GraphQLUpload } from "graphql-upload";
+import FormData from "form-data";
+import { FileUpload } from "graphql-upload";
 import { ServerResponse } from "http";
 import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
-import { map } from "ramda";
+import fetch from "node-fetch";
 import { login } from "../auth";
-import parseGameLog from "../parseGameLog";
+import { parseGameLog } from "../wa";
+import { map } from "ramda";
 
 const SALT_ROUNDS = 10;
 
 type Context = {
-  req: MicroRequest & { session: Express.Session };
+  req: NowRequest & { session: Express.Session };
   res: ServerResponse;
   db: PrismaClient;
 };
@@ -39,7 +42,9 @@ const User = objectType({
   definition(t) {
     t.model.id();
     t.model.username();
+    t.model.countryCode();
     t.model.playedGames();
+    t.model.ranks();
   },
 });
 
@@ -47,6 +52,19 @@ const Player = objectType({
   name: "Player",
   definition(t) {
     t.model.user();
+  },
+});
+
+const Rank = objectType({
+  name: "Rank",
+  definition(t) {
+    t.model.user();
+    t.model.league();
+    t.model.place();
+    t.model.points();
+    t.model.wins();
+    t.model.losses();
+    t.model.playedGames();
   },
 });
 
@@ -59,6 +77,15 @@ const Game = objectType({
     t.model.startedAt();
     t.model.duration();
     t.model.players();
+  },
+});
+
+const League = objectType({
+  name: "League",
+  definition(t) {
+    t.model.id();
+    t.model.name();
+    t.model.ranks();
   },
 });
 
@@ -81,6 +108,14 @@ const Query = queryType({
       type: "User",
       resolve(_root, _args, { db }: Context) {
         return db.user.findMany();
+      },
+    });
+
+    t.field("currentLeague", {
+      type: "League",
+      async resolve(_root, _args, { db }: Context) {
+        const [league] = await db.league.findMany();
+        return league;
       },
     });
   },
@@ -110,21 +145,32 @@ const Mutation = mutationType({
         username: stringArg({ required: true }),
         email: stringArg({ required: true }),
         password: stringArg({ required: true }),
+        countryCode: stringArg(),
+        avatar: stringArg(),
       },
       async resolve(
         _root,
-        { username, email, password },
+        { username, email, password, countryCode, avatar },
         { db, req }: Context,
       ) {
         if (req.session.userId) {
           throw new Error("Already logged in");
         }
 
+        const [league] = await db.league.findMany();
+
         const user = await db.user.create({
           data: {
             username,
             email,
             password: await bcrypt.hash(password, SALT_ROUNDS),
+            countryCode,
+            avatar,
+            ranks: {
+              create: {
+                league: { connect: { id: league.id } },
+              },
+            },
           },
         });
 
@@ -171,17 +217,38 @@ const Mutation = mutationType({
       },
       async resolve(
         _root,
-        { loserId, replay },
+        { loserId, replay }: { loserId: string; replay: Promise<FileUpload> },
         { db, req: { session: { userId } } },
       ) {
-        const { startedAt, duration, players } = parseGameLog(replay);
+        if (userId === loserId) {
+          throw new Error("You can't play yourself");
+        }
+
+        const { filename, createReadStream } = await replay;
+        const stream = createReadStream();
+
+        await new Promise((resolve, reject) => {
+          stream.once("readable", resolve);
+        });
+
+        const form = new FormData();
+        form.append(
+          "replay",
+          stream,
+          { filename },
+        );
+
+        const fetchRes = await fetch(
+          "http://34.94.165.86:8080/",
+          { method: "POST", body: form },
+        );
+
+        const gameLog = await fetchRes.text();
+
+        const { startedAt, duration, players } = parseGameLog(gameLog);
 
         if (players.length !== 2) {
           throw new Error("Only 1v1 supported currently");
-        }
-
-        if (userId === loserId) {
-          throw new Error("You can't play yourself");
         }
 
         // TODO: Support more leagues
@@ -234,10 +301,10 @@ const Mutation = mutationType({
 });
 
 export default makeSchema({
-  types: [Query, Mutation, User, Player, Game, Upload],
+  types: [Query, Mutation, User, Player, Game, Upload, Rank, League],
   outputs: {
     schema: __dirname + "/generated/schema.graphql",
     typegen: __dirname + "/generated/typings.ts",
   },
-  plugins: [nexusSchemaPrisma({ experimentalCRUD: true })],
+  plugins: [nexusSchemaPrisma()],
 });

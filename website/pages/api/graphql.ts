@@ -11,7 +11,7 @@ const session = cookieSession({
   httpOnly: false,
 });
 
-const db = new PrismaClient();
+const prisma = new PrismaClient();
 
 export const config = {
   api: {
@@ -25,7 +25,7 @@ const server = new ApolloServer({
   playground: true,
   context(ctx) {
     const { req } = ctx;
-    return { ...ctx, db, userId: req.session?.userId };
+    return { ...ctx, db: prisma, prisma, userId: req.session?.userId };
   },
 });
 

@@ -25,8 +25,14 @@ app.use(async ({ response }, next) => {
 app.use(async (context) => {
   const { request, response } = context;
   const body = request.body({ type: "form-data" });
+
   const formData = await body.value.read();
+
+  console.log({ formData });
   const file = formData.files?.[0];
+  console.log({ file });
+
+  console.log({ body, formData, file });
 
   if (!file || path.extname(file.originalName).toLowerCase() !== ".wagame") {
     return context.throw(Status.BadRequest, "Please supply a .WAgame");

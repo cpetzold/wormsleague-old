@@ -29,7 +29,7 @@ type ParsedGame = {
   players: ParsedGamePlayer[];
 };
 
-export default function parseGameLog(log: string): ParsedGame {
+export function parseGameLog(log: string): ParsedGame {
   var [
     info,
     teams,
@@ -103,7 +103,7 @@ export default function parseGameLog(log: string): ParsedGame {
   };
 }
 
-function parseDuration(str: string) {
+export function parseDuration(str: string) {
   const { h, m, s, ms } = tmpl(
     str,
     `{{h}}:{{m}}:{{s}}${str.includes(".") ? ".{{ms}}" : ""}`,

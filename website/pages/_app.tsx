@@ -1,29 +1,35 @@
+import CssBaseline from "@material-ui/core/CssBaseline";
 import Head from "next/head";
 import React from "react";
-import { ThemeProvider } from "theme-ui";
-import theme from "../lib/theme";
-import { Global } from "@emotion/core";
+import useMediaQuery from "@material-ui/core/useMediaQuery";
+import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
 import Page from "../components/Page";
+import { blue, pink } from "@material-ui/core/colors";
 
 export default function App({ Component, pageProps }) {
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
+  const theme = React.useMemo(
+    () =>
+      createMuiTheme({
+        palette: {
+          type: "dark",
+          // type: prefersDarkMode ? "dark" : "light",
+          primary: blue,
+          secondary: pink,
+        },
+      }),
+    [prefersDarkMode]
+  );
+
   return (
     <ThemeProvider theme={theme}>
       <Page>
         <Head>
-          <title>Worms League</title>
+          <title>WormsLeague</title>
         </Head>
+        <CssBaseline />
         <Component {...pageProps} />
-        <Global
-          styles={(theme) => ({
-            "*": {
-              boxSizing: "border-box",
-            },
-            a: {
-              color: theme.colors.primary,
-              textDecoration: "none",
-            },
-          })}
-        />
       </Page>
     </ThemeProvider>
   );
