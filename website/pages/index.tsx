@@ -2,7 +2,6 @@ import { useQuery } from "@apollo/client";
 import gql from "graphql-tag";
 import Standings from "../components/Standings";
 import SignupDialog from "../components/SignupDialog";
-import withApollo from "../lib/withApollo";
 import { useState } from "react";
 import { Container } from "@material-ui/core";
 
@@ -23,7 +22,7 @@ const HOME_QUERY = gql`
   }
 `;
 
-function Home() {
+export default function Home() {
   const { loading, data } = useQuery(HOME_QUERY);
 
   if (loading) return null;
@@ -48,5 +47,3 @@ function Home() {
     </Container>
   );
 }
-
-export default withApollo(Home);

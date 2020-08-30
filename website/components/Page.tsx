@@ -10,7 +10,6 @@ import {
 } from "@material-ui/core";
 import Head from "next/head";
 import { useState } from "react";
-import withApollo from "../lib/withApollo";
 import SignupDialog from "./SignupDialog";
 import LoginDialog from "./LoginDialog";
 import gql from "graphql-tag";
@@ -39,7 +38,7 @@ const LOGOUT_MUTATION = gql`
   }
 `;
 
-function Page({ children }) {
+export default function Page({ children }) {
   const router = useRouter();
   const classes = useStyles();
   const [signupOpen, setSignupOpen] = useState(false);
@@ -100,5 +99,3 @@ function Page({ children }) {
     </>
   );
 }
-
-export default withApollo(Page);
