@@ -1,3 +1,5 @@
+import * as uuid from "uuid";
+
 import {
   arg,
   makeSchema,
@@ -7,20 +9,26 @@ import {
   scalarType,
   stringArg,
 } from "@nexus/schema";
-import { PrismaClient } from "@prisma/client";
-import { NowRequest } from "@vercel/node";
-import { GraphQLUpload } from "apollo-server-core";
-import bcrypt from "bcrypt";
-import FormData from "form-data";
+import { createDefaultRank, updateRanks } from "../rank";
+import { head, map } from "ramda";
+
 import { FileUpload } from "graphql-upload";
+import FormData from "form-data";
+import { GraphQLUpload } from "apollo-server-core";
+import { NowRequest } from "@vercel/node";
+import { PrismaClient } from "@prisma/client";
 import { ServerResponse } from "http";
-import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
+import { Storage } from "@google-cloud/storage";
+import bcrypt from "bcrypt";
 import fetch from "node-fetch";
 import { login } from "../auth";
+import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
 import { parseGameLog } from "../wa";
-import { map } from "ramda";
 
 const SALT_ROUNDS = 10;
+
+const storage = new Storage();
+const gamesBucket = storage.bucket("games.wormsleague.com");
 
 type Context = {
   req: NowRequest & { session: Express.Session };
@@ -60,8 +68,9 @@ const Rank = objectType({
   definition(t) {
     t.model.user();
     t.model.league();
-    t.model.place();
-    t.model.points();
+    t.model.rating();
+    t.model.ratingDeviation();
+    t.model.ratingVolatility();
     t.model.wins();
     t.model.losses();
     t.model.playedGames();
@@ -77,6 +86,24 @@ const Game = objectType({
     t.model.startedAt();
     t.model.duration();
     t.model.players();
+    t.model.replayUrl();
+    t.model.logUrl();
+    t.field("winner", {
+      type: "Player",
+      async resolve(game, _args, { db }: Context) {
+        return head(
+          await db.player.findMany({ where: { gameId: game.id, won: true } }),
+        );
+      },
+    });
+    t.field("loser", {
+      type: "Player",
+      async resolve(game, _args, { db }: Context) {
+        return head(
+          await db.player.findMany({ where: { gameId: game.id, won: false } }),
+        );
+      },
+    });
   },
 });
 
@@ -86,6 +113,7 @@ const League = objectType({
     t.model.id();
     t.model.name();
     t.model.ranks();
+    t.model.games();
   },
 });
 
@@ -121,22 +149,6 @@ const Query = queryType({
   },
 });
 
-function upsertUserRank(db: PrismaClient, userId: string, leagueId: string) {
-  return db.rank.upsert({
-    create: {
-      league: { connect: { id: leagueId } },
-      user: { connect: { id: userId } },
-    },
-    update: {
-      league: { connect: { id: leagueId } },
-      user: { connect: { id: userId } },
-    },
-    where: {
-      userId_leagueId: { userId, leagueId },
-    },
-  });
-}
-
 const Mutation = mutationType({
   definition(t) {
     t.field("signup", {
@@ -169,6 +181,7 @@ const Mutation = mutationType({
             ranks: {
               create: {
                 league: { connect: { id: league.id } },
+                ...createDefaultRank(),
               },
             },
           },
@@ -225,6 +238,7 @@ const Mutation = mutationType({
         }
 
         const { filename, createReadStream } = await replay;
+        const gameId = uuid.v4();
         const stream = createReadStream();
 
         await new Promise((resolve, reject) => {
@@ -245,6 +259,14 @@ const Mutation = mutationType({
 
         const gameLog = await fetchRes.text();
 
+        await gamesBucket.upload(
+          stream.path as string,
+          { destination: `${gameId}.WAgame` },
+        );
+
+        const logFile = gamesBucket.file(`${gameId}.log`);
+        await logFile.save(gameLog);
+
         const { startedAt, duration, players } = parseGameLog(gameLog);
 
         if (players.length !== 2) {
@@ -254,14 +276,19 @@ const Mutation = mutationType({
         // TODO: Support more leagues
         const [league] = await db.league.findMany();
 
-        await upsertUserRank(db, userId, league.id);
-        await upsertUserRank(db, loserId, league.id);
+        await updateRanks(db, league.id, userId, loserId);
 
         return db.game.create({
           data: {
+            id: gameId,
+            league: { connect: { id: league.id } },
             duration,
             startedAt,
             reportedAt: new Date(),
+            replayUrl:
+              `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.WAgame`,
+            logUrl:
+              `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.log`,
             players: {
               create: map(
                 (

@@ -1,18 +1,26 @@
-import CssBaseline from "@material-ui/core/CssBaseline";
-import Head from "next/head";
-import React from "react";
-import useMediaQuery from "@material-ui/core/useMediaQuery";
-import { createMuiTheme, ThemeProvider } from "@material-ui/core/styles";
-import Page from "../components/Page";
-import { blue, pink } from "@material-ui/core/colors";
-import withApollo from "next-with-apollo";
 import {
   ApolloClient,
+  ApolloLink,
   ApolloProvider,
   InMemoryCache,
-  ApolloLink,
 } from "@apollo/client";
+import { IntrospectionQuery, buildClientSchema } from "graphql";
+import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+import { blue, pink } from "@material-ui/core/colors";
+
+import CssBaseline from "@material-ui/core/CssBaseline";
+import Head from "next/head";
+import Page from "../components/Page";
+import React from "react";
 import { createUploadLink } from "apollo-upload-client";
+import introspectionResult from "../lib/graphql/generated/graphql.schema.json";
+import useMediaQuery from "@material-ui/core/useMediaQuery";
+import withApollo from "next-with-apollo";
+import { withScalars } from "apollo-link-scalars";
+
+const schema = buildClientSchema(
+  (introspectionResult as unknown) as IntrospectionQuery
+);
 
 function App({ Component, pageProps, apollo }) {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
@@ -45,7 +53,7 @@ function App({ Component, pageProps, apollo }) {
   );
 }
 
-const link = createUploadLink({
+const uploadLink = createUploadLink({
   credentials: "include",
   uri: "/api/graphql",
   fetchOptions: {
@@ -53,9 +61,23 @@ const link = createUploadLink({
   },
 });
 
+const typesMap = {
+  DateTime: {
+    serialize: (date: Date) => date.toISOString(),
+    parseValue: (raw: string | number | null): Date | null => {
+      return raw ? new Date(raw) : null;
+    },
+  },
+};
+
+const link = ApolloLink.from([
+  withScalars({ schema, typesMap }),
+  (uploadLink as unknown) as ApolloLink,
+]);
+
 export default withApollo(({ initialState }) => {
   return new ApolloClient({
     cache: new InMemoryCache().restore(initialState || {}),
-    link: (link as unknown) as ApolloLink,
+    link,
   });
 })(App);

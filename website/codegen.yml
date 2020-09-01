@@ -1,0 +1,12 @@
+schema: ./lib/graphql/generated/schema.graphql
+documents: ./**/*.tsx
+generates:
+  ./lib/graphql/generated/client.ts:
+    plugins:
+      - typescript
+      - typescript-operations
+  ./lib/graphql/generated/graphql.schema.json:
+    plugins:
+      - introspection
+    config:
+      minify: true

@@ -1,20 +1,26 @@
+import { Alert, Color } from "@material-ui/lab";
 import {
   AppBar,
   Box,
   Button,
-  createStyles,
-  makeStyles,
+  Fab,
+  Snackbar,
   Theme,
   Toolbar,
   Typography,
+  createStyles,
+  makeStyles,
 } from "@material-ui/core";
+import { useMutation, useQuery } from "@apollo/client";
+
+import AddIcon from "@material-ui/icons/Add";
 import Head from "next/head";
-import { useState } from "react";
-import SignupDialog from "./SignupDialog";
 import LoginDialog from "./LoginDialog";
+import ReportDialog from "./ReportDialog";
+import SignupDialog from "./SignupDialog";
 import gql from "graphql-tag";
-import { useQuery, useMutation } from "@apollo/client";
 import { useRouter } from "next/dist/client/router";
+import { useState } from "react";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -25,7 +31,7 @@ const useStyles = makeStyles((theme: Theme) =>
 );
 
 const PAGE_QUERY = gql`
-  {
+  query Page {
     me {
       username
     }
@@ -38,11 +44,18 @@ const LOGOUT_MUTATION = gql`
   }
 `;
 
+type AlertState = {
+  severity: Color;
+  message: string;
+};
+
 export default function Page({ children }) {
   const router = useRouter();
   const classes = useStyles();
   const [signupOpen, setSignupOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [alert, setAlert] = useState<AlertState>(null);
 
   const [logout] = useMutation(LOGOUT_MUTATION);
   const { loading, data } = useQuery(PAGE_QUERY);
@@ -65,37 +78,72 @@ export default function Page({ children }) {
           </Box>
 
           <Box justifySelf="flex-end">
-            {me ? (
-              <>
-                Hi, {me.username}{" "}
-                <Button
-                  onClick={async () => {
-                    await logout();
-                    router.reload();
-                  }}
-                >
-                  Log out
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={() => setLoginOpen(true)}>Log in</Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className={classes.button}
-                  onClick={() => setSignupOpen(true)}
-                >
-                  Sign up
-                </Button>
-              </>
-            )}
+            {me
+              ? (
+                <>
+                  <Button
+                    onClick={async () => {
+                      await logout();
+                      router.reload();
+                    }}
+                    className={classes.button}
+                  >
+                    Log out
+                  </Button>
+                  <Fab
+                    variant="extended"
+                    color="primary"
+                    size="medium"
+                    aria-label="report win"
+                    onClick={() => setReportOpen(true)}
+                  >
+                    <AddIcon /> Report win
+                  </Fab>
+                </>
+              )
+              : (
+                <>
+                  <Button onClick={() => setLoginOpen(true)}>Log in</Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    className={classes.button}
+                    onClick={() => setSignupOpen(true)}
+                  >
+                    Sign up
+                  </Button>
+                </>
+              )}
           </Box>
         </Toolbar>
       </AppBar>
-      {children}
+      <Box py={3}>{children}</Box>
       <SignupDialog open={signupOpen} onClose={() => setSignupOpen(false)} />
       <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <ReportDialog
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onSuccess={() => {
+          setReportOpen(false);
+          setAlert({
+            severity: "success",
+            message: "Your win has been reported.",
+          });
+        }}
+      />
+      <Snackbar
+        open={!!alert}
+        autoHideDuration={6000}
+        onClose={() => setAlert(null)}
+      >
+        <Alert
+          variant="filled"
+          onClose={() => setAlert(null)}
+          severity={alert?.severity}
+        >
+          {alert?.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

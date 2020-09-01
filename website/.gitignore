@@ -34,3 +34,5 @@ lerna-debug.log*
 # Prisma
 failed-inferMigrationSteps*
 generated
+
+wormsleague-gcp.json

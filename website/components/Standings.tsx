@@ -1,15 +1,23 @@
-import Link from "next/link";
-import Flag from "./Flag";
 import {
   Table,
+  TableBody,
+  TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  TableCell,
-  TableBody,
 } from "@material-ui/core";
 
-export default function Standings({ players }) {
+import Flag from "./Flag";
+import { Standings_RankFragment } from "../lib/graphql/generated/client";
+import gql from "graphql-tag";
+import { sortWith } from "ramda";
+
+export default function Standings({
+  ranks,
+}: {
+  ranks: Standings_RankFragment[];
+}) {
+  const sortedRanks = sortWith([(a, b) => b.rating - a.rating], ranks);
   return (
     <TableContainer>
       <Table>
@@ -18,28 +26,44 @@ export default function Standings({ players }) {
             <TableCell>Place</TableCell>
             <TableCell>Player</TableCell>
             <TableCell>Country</TableCell>
-            <TableCell>Points</TableCell>
+            <TableCell>Rating</TableCell>
             <TableCell>Wins</TableCell>
             <TableCell>Losses</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {players.map(
-            ({ username, countryCode, place, points, wins, losses }) => (
+          {sortedRanks.map(
+            ({ user: { username, countryCode }, rating, wins, losses }, i) => (
               <TableRow key={username}>
-                <TableCell>{place}</TableCell>
+                <TableCell>{i + 1}</TableCell>
                 <TableCell>{username}</TableCell>
                 <TableCell>
-                  <Flag size={42} countryCode={countryCode} />
+                  <Flag countryCode={countryCode} />
                 </TableCell>
-                <TableCell>{points}</TableCell>
+                <TableCell>{Math.round(rating)}</TableCell>
                 <TableCell>{wins}</TableCell>
                 <TableCell>{losses}</TableCell>
               </TableRow>
-            )
+            ),
           )}
         </TableBody>
       </Table>
     </TableContainer>
   );
 }
+
+Standings.fragments = {
+  rank: gql`
+    fragment Standings_rank on Rank {
+      user {
+        username
+        countryCode
+      }
+      rating
+      ratingDeviation
+      ratingVolatility
+      wins
+      losses
+    }
+  `,
+};

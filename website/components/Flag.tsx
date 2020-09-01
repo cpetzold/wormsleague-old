@@ -1,8 +1,9 @@
+import { Box, Tooltip } from "@material-ui/core";
+
 import ReactCountryFlag from "react-country-flag";
-import { Tooltip, Box } from "@material-ui/core";
 import countryList from "country-list";
 
-export default function Flag({ countryCode, size = 32, ...props }) {
+export default function Flag({ countryCode, size = 24, ...props }) {
   return (
     <Tooltip title={countryList.getName(countryCode)} placement="top" arrow>
       <span>

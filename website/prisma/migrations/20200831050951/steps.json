@@ -281,6 +281,73 @@
       "arity": "List"
     },
     {
+      "tag": "CreateField",
+      "model": "Game",
+      "field": "league",
+      "type": "League",
+      "arity": "Optional"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "Game",
+          "field": "league"
+        },
+        "directive": "relation"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "Game",
+          "field": "league"
+        },
+        "directive": "relation"
+      },
+      "argument": "fields",
+      "value": "[leagueId]"
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "Game",
+          "field": "league"
+        },
+        "directive": "relation"
+      },
+      "argument": "references",
+      "value": "[id]"
+    },
+    {
+      "tag": "CreateField",
+      "model": "Game",
+      "field": "leagueId",
+      "type": "String",
+      "arity": "Optional"
+    },
+    {
+      "tag": "CreateField",
+      "model": "Game",
+      "field": "replayUrl",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "Game",
+      "field": "logUrl",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
       "tag": "CreateModel",
       "model": "Player"
     },
@@ -602,6 +669,13 @@
       "arity": "List"
     },
     {
+      "tag": "CreateField",
+      "model": "League",
+      "field": "games",
+      "type": "Game",
+      "arity": "List"
+    },
+    {
       "tag": "CreateModel",
       "model": "Rank"
     },
@@ -714,41 +788,23 @@
     {
       "tag": "CreateField",
       "model": "Rank",
-      "field": "points",
-      "type": "Int",
+      "field": "rating",
+      "type": "Float",
       "arity": "Required"
-    },
-    {
-      "tag": "CreateDirective",
-      "location": {
-        "path": {
-          "tag": "Field",
-          "model": "Rank",
-          "field": "points"
-        },
-        "directive": "default"
-      }
-    },
-    {
-      "tag": "CreateArgument",
-      "location": {
-        "tag": "Directive",
-        "path": {
-          "tag": "Field",
-          "model": "Rank",
-          "field": "points"
-        },
-        "directive": "default"
-      },
-      "argument": "",
-      "value": "1200"
     },
     {
       "tag": "CreateField",
       "model": "Rank",
-      "field": "place",
-      "type": "Int",
-      "arity": "Optional"
+      "field": "ratingDeviation",
+      "type": "Float",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "Rank",
+      "field": "ratingVolatility",
+      "type": "Float",
+      "arity": "Required"
     },
     {
       "tag": "CreateField",

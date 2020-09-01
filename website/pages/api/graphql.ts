@@ -1,9 +1,10 @@
-import { PrismaClient } from "@prisma/client";
-import { ApolloServer } from "apollo-server-micro";
-import cookieSession from "micro-cookie-session";
 import { NextApiRequest, NextApiResponse } from "next";
-import { send } from "micro";
+
+import { ApolloServer } from "apollo-server-micro";
+import { PrismaClient } from "@prisma/client";
+import cookieSession from "micro-cookie-session";
 import schema from "../../lib/graphql/schema";
+import { send } from "micro";
 
 const session = cookieSession({
   secret: process.env.SESSION_SECRET,

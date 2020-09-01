@@ -1,25 +1,23 @@
-import { useQuery } from "@apollo/client";
-import gql from "graphql-tag";
-import Standings from "../components/Standings";
-import SignupDialog from "../components/SignupDialog";
-import { useState } from "react";
-import { Container } from "@material-ui/core";
+import { Container, Fab, Grid, Paper, Typography } from "@material-ui/core";
 
-const HOME_QUERY = gql`
-  {
+import Games from "../components/Games";
+import Standings from "../components/Standings";
+import gql from "graphql-tag";
+import { useQuery } from "@apollo/client";
+
+export const HOME_QUERY = gql`
+  query Home {
     currentLeague {
       ranks {
-        user {
-          username
-          countryCode
-        }
-        place
-        points
-        wins
-        losses
+        ...Standings_rank
+      }
+      games {
+        ...Games_game
       }
     }
   }
+  ${Games.fragments.game}
+  ${Standings.fragments.rank}
 `;
 
 export default function Home() {
@@ -27,23 +25,24 @@ export default function Home() {
 
   if (loading) return null;
 
-  const { ranks } = data?.currentLeague;
-  console.log(ranks);
-
-  const players = ranks.map(
-    ({ user: { username, countryCode }, place, points, wins, losses }) => ({
-      username,
-      countryCode,
-      place,
-      points,
-      wins,
-      losses,
-    })
-  );
+  const { ranks, games } = data?.currentLeague;
 
   return (
-    <Container maxWidth="md">
-      <Standings players={players} />
+    <Container maxWidth={false}>
+      <Grid container spacing={5}>
+        <Grid item xs>
+          <Typography variant="h6">Standings</Typography>
+          <Paper>
+            <Standings ranks={ranks} />
+          </Paper>
+        </Grid>
+        <Grid item xs>
+          <Typography variant="h6">Games</Typography>
+          <Paper>
+            <Games games={games} />
+          </Paper>
+        </Grid>
+      </Grid>
     </Container>
   );
 }
