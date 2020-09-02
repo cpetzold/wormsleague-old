@@ -4,12 +4,14 @@ import {
   Box,
   Button,
   Fab,
+  PaletteType,
   Snackbar,
   Theme,
   Toolbar,
   Typography,
   createStyles,
   makeStyles,
+  useMediaQuery,
 } from "@material-ui/core";
 import { useMutation, useQuery } from "@apollo/client";
 
@@ -19,7 +21,8 @@ import LoginDialog from "./LoginDialog";
 import ReportDialog from "./ReportDialog";
 import SignupDialog from "./SignupDialog";
 import gql from "graphql-tag";
-import { useRouter } from "next/dist/client/router";
+import { useCookies } from "react-cookie";
+import { useRouter } from "next/router";
 import { useState } from "react";
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -52,6 +55,11 @@ type AlertState = {
 export default function Page({ children }) {
   const router = useRouter();
   const classes = useStyles();
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const [cookies, setCookie] = useCookies(["paletteType"]);
+  const paletteType =
+    cookies.paletteType ?? (prefersDarkMode ? "dark" : "light");
+
   const [signupOpen, setSignupOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -77,7 +85,7 @@ export default function Page({ children }) {
             <img src="/victory.svg" height={40} />
           </Box>
 
-          <Box justifySelf="flex-end">
+          <Box display="flex" justifySelf="flex-end" alignItems="center">
             {me ? (
               <>
                 <Button
@@ -112,6 +120,17 @@ export default function Page({ children }) {
                 </Button>
               </>
             )}
+            <img
+              style={{ cursor: "pointer" }}
+              onClick={() =>
+                setCookie(
+                  "paletteType",
+                  paletteType === "dark" ? "light" : "dark"
+                )
+              }
+              src={paletteType === "dark" ? "/light-off.png" : "/light-on.png"}
+              height={32}
+            />
           </Box>
         </Toolbar>
       </AppBar>

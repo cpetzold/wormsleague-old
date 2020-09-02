@@ -6,14 +6,16 @@ import {
 } from "@apollo/client";
 import { IntrospectionQuery, buildClientSchema } from "graphql";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
-import { blue, pink } from "@material-ui/core/colors";
+import { blue, green } from "@material-ui/core/colors";
 
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Head from "next/head";
 import Page from "../components/Page";
+import { PaletteType } from "@material-ui/core";
 import React from "react";
 import { createUploadLink } from "apollo-upload-client";
 import introspectionResult from "../lib/graphql/generated/graphql.schema.json";
+import { useCookies } from "react-cookie";
 import useMediaQuery from "@material-ui/core/useMediaQuery";
 import withApollo from "next-with-apollo";
 import { withScalars } from "apollo-link-scalars";
@@ -24,18 +26,20 @@ const schema = buildClientSchema(
 
 function App({ Component, pageProps, apollo }) {
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const [cookies] = useCookies(["paletteType"]);
+  const paletteType =
+    cookies.paletteType ?? (prefersDarkMode ? "dark" : "light");
 
   const theme = React.useMemo(
     () =>
       createMuiTheme({
         palette: {
-          type: "dark",
-          // type: prefersDarkMode ? "dark" : "light",
+          type: paletteType,
           primary: blue,
-          secondary: pink,
+          secondary: green,
         },
       }),
-    [prefersDarkMode]
+    [paletteType]
   );
 
   return (
