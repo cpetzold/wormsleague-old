@@ -78,59 +78,63 @@ export default function Page({ children }) {
           </Box>
 
           <Box justifySelf="flex-end">
-            {me
-              ? (
-                <>
-                  <Button
-                    onClick={async () => {
-                      await logout();
-                      router.reload();
-                    }}
-                    className={classes.button}
-                  >
-                    Log out
-                  </Button>
-                  <Fab
-                    variant="extended"
-                    color="primary"
-                    size="medium"
-                    aria-label="report win"
-                    onClick={() => setReportOpen(true)}
-                  >
-                    <AddIcon /> Report win
-                  </Fab>
-                </>
-              )
-              : (
-                <>
-                  <Button onClick={() => setLoginOpen(true)}>Log in</Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    className={classes.button}
-                    onClick={() => setSignupOpen(true)}
-                  >
-                    Sign up
-                  </Button>
-                </>
-              )}
+            {me ? (
+              <>
+                <Button
+                  onClick={async () => {
+                    await logout();
+                    router.reload();
+                  }}
+                  className={classes.button}
+                >
+                  Log out
+                </Button>
+                <Fab
+                  variant="extended"
+                  color="primary"
+                  size="medium"
+                  aria-label="report win"
+                  onClick={() => setReportOpen(true)}
+                >
+                  <AddIcon /> Report win
+                </Fab>
+              </>
+            ) : (
+              <>
+                <Button onClick={() => setLoginOpen(true)}>Log in</Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  className={classes.button}
+                  onClick={() => setSignupOpen(true)}
+                >
+                  Sign up
+                </Button>
+              </>
+            )}
           </Box>
         </Toolbar>
       </AppBar>
       <Box py={3}>{children}</Box>
-      <SignupDialog open={signupOpen} onClose={() => setSignupOpen(false)} />
-      <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
-      <ReportDialog
-        open={reportOpen}
-        onClose={() => setReportOpen(false)}
-        onSuccess={() => {
-          setReportOpen(false);
-          setAlert({
-            severity: "success",
-            message: "Your win has been reported.",
-          });
-        }}
-      />
+      {!me && (
+        <SignupDialog open={signupOpen} onClose={() => setSignupOpen(false)} />
+      )}
+      {!me && (
+        <LoginDialog open={loginOpen} onClose={() => setLoginOpen(false)} />
+      )}
+      {me && (
+        <ReportDialog
+          open={reportOpen}
+          onClose={() => setReportOpen(false)}
+          onSuccess={() => {
+            setReportOpen(false);
+            setAlert({
+              severity: "success",
+              message: "Your win has been reported.",
+            });
+          }}
+        />
+      )}
       <Snackbar
         open={!!alert}
         autoHideDuration={6000}
