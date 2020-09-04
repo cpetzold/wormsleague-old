@@ -1,4 +1,5 @@
 import { Container, Fab, Grid, Paper, Typography } from "@material-ui/core";
+import { HomeQuery, HomeQueryVariables } from "../lib/graphql/generated/client";
 
 import Games from "../components/Games";
 import Standings from "../components/Standings";
@@ -21,11 +22,10 @@ export const HOME_QUERY = gql`
 `;
 
 export default function Home() {
-  const { loading, data } = useQuery(HOME_QUERY);
+  const { data } = useQuery<HomeQuery, HomeQueryVariables>(HOME_QUERY);
 
-  if (loading) return null;
-
-  const { ranks, games } = data?.currentLeague;
+  const ranks = data?.currentLeague?.ranks ?? [];
+  const games = data?.currentLeague?.games ?? [];
 
   return (
     <Container maxWidth={false}>

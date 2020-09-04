@@ -22,6 +22,7 @@ import ReportDialog from "./ReportDialog";
 import SignupDialog from "./SignupDialog";
 import gql from "graphql-tag";
 import { useCookies } from "react-cookie";
+import usePaletteType from "../lib/usePaletteType";
 import { useRouter } from "next/router";
 import { useState } from "react";
 
@@ -55,10 +56,7 @@ type AlertState = {
 export default function Page({ children }) {
   const router = useRouter();
   const classes = useStyles();
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
-  const [cookies, setCookie] = useCookies(["paletteType"]);
-  const paletteType =
-    cookies.paletteType ?? (prefersDarkMode ? "dark" : "light");
+  const [paletteType, togglePaletteType] = usePaletteType();
 
   const [signupOpen, setSignupOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -79,10 +77,13 @@ export default function Page({ children }) {
       </Head>
       <AppBar color="inherit" position="sticky">
         <Toolbar>
-          <Box display="flex" alignItems="center" flexGrow={1}>
-            <Typography variant="h5">WormsLeague</Typography>
-            &emsp;
-            <img src="/victory.svg" height={40} />
+          <Box
+            display="flex"
+            justifySelf="center"
+            alignItems="center"
+            flexGrow={1}
+          >
+            <img src="/logo.png" height={48} />
           </Box>
 
           <Box display="flex" justifySelf="flex-end" alignItems="center">
@@ -122,12 +123,7 @@ export default function Page({ children }) {
             )}
             <img
               style={{ cursor: "pointer" }}
-              onClick={() =>
-                setCookie(
-                  "paletteType",
-                  paletteType === "dark" ? "light" : "dark"
-                )
-              }
+              onClick={() => togglePaletteType()}
               src={paletteType === "dark" ? "/light-off.png" : "/light-on.png"}
               height={32}
             />

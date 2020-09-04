@@ -1,4 +1,5 @@
 import {
+  Box,
   Table,
   TableBody,
   TableCell,
@@ -36,7 +37,11 @@ export default function Standings({
             ({ user: { username, countryCode }, rating, wins, losses }, i) => (
               <TableRow key={username}>
                 <TableCell>{i + 1}</TableCell>
-                <TableCell>{username}</TableCell>
+                <TableCell>
+                  <Box display="flex" alignItems="center">
+                    {username}
+                  </Box>
+                </TableCell>
                 <TableCell>
                   <Flag countryCode={countryCode} />
                 </TableCell>
@@ -44,7 +49,7 @@ export default function Standings({
                 <TableCell>{wins}</TableCell>
                 <TableCell>{losses}</TableCell>
               </TableRow>
-            ),
+            )
           )}
         </TableBody>
       </Table>
