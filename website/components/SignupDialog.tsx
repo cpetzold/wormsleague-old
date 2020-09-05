@@ -1,20 +1,21 @@
-import { useState } from "react";
-
-import Autocomplete from "@material-ui/lab/Autocomplete";
 import {
   Button,
-  TextField,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  TextField,
 } from "@material-ui/core";
-import countryList from "country-list";
+
+import Autocomplete from "@material-ui/lab/Autocomplete";
 import Flag from "./Flag";
+import countryList from "country-list";
 import gql from "graphql-tag";
 import { useMutation } from "@apollo/client";
 import { useRouter } from "next/dist/client/router";
+import { useState } from "react";
+
 const countries = countryList.getData();
 
 type Country = {
@@ -55,7 +56,6 @@ export default function SignupDialog({ open, onClose }) {
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          console.log({ username, email, password, country });
 
           await signup({
             variables: {

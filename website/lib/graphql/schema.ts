@@ -27,9 +27,9 @@ import { parseGameLog } from "../wa";
 
 const SALT_ROUNDS = 10;
 
-const credentials = JSON.parse(
-  Buffer.from(process.env.GCLOUD_CREDENTIALS, "base64").toString()
-);
+const credentials =
+  process.env.GCLOUD_CREDENTIALS &&
+  JSON.parse(Buffer.from(process.env.GCLOUD_CREDENTIALS, "base64").toString());
 
 const storage = new Storage({
   projectId: "wormsleague",
@@ -280,6 +280,8 @@ const Mutation = mutationType({
         await logFile.save(gameLog);
 
         const { startedAt, duration, players } = parseGameLog(gameLog);
+
+        console.log({ startedAt, duration, players });
 
         if (players.length !== 2) {
           throw new Error("Only 1v1 supported currently");
