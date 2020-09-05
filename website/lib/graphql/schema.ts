@@ -27,7 +27,16 @@ import { parseGameLog } from "../wa";
 
 const SALT_ROUNDS = 10;
 
-const storage = new Storage();
+const credentials = JSON.parse(
+  Buffer.from(process.env.GCLOUD_CREDENTIALS, "base64").toString()
+);
+
+console.log({ credentials });
+
+const storage = new Storage({
+  projectId: "wormsleague",
+  credentials,
+});
 const gamesBucket = storage.bucket("games.wormsleague.com");
 
 type Context = {
@@ -92,7 +101,7 @@ const Game = objectType({
       type: "Player",
       async resolve(game, _args, { db }: Context) {
         return head(
-          await db.player.findMany({ where: { gameId: game.id, won: true } }),
+          await db.player.findMany({ where: { gameId: game.id, won: true } })
         );
       },
     });
@@ -100,7 +109,7 @@ const Game = objectType({
       type: "Player",
       async resolve(game, _args, { db }: Context) {
         return head(
-          await db.player.findMany({ where: { gameId: game.id, won: false } }),
+          await db.player.findMany({ where: { gameId: game.id, won: false } })
         );
       },
     });
@@ -125,7 +134,12 @@ const Query = queryType({
       async resolve(
         _root,
         _args,
-        { db, req: { session: { userId } } }: Context,
+        {
+          db,
+          req: {
+            session: { userId },
+          },
+        }: Context
       ) {
         if (!userId) return null;
         return db.user.findOne({ where: { id: userId } });
@@ -163,7 +177,7 @@ const Mutation = mutationType({
       async resolve(
         _root,
         { username, email, password, countryCode, avatar },
-        { db, req }: Context,
+        { db, req }: Context
       ) {
         if (req.session.userId) {
           throw new Error("Already logged in");
@@ -202,7 +216,7 @@ const Mutation = mutationType({
       async resolve(
         _root,
         { usernameOrEmail, password },
-        { db, req }: Context,
+        { db, req }: Context
       ) {
         if (req.session.userId) {
           throw new Error("Already logged in");
@@ -231,7 +245,12 @@ const Mutation = mutationType({
       async resolve(
         _root,
         { loserId, replay }: { loserId: string; replay: Promise<FileUpload> },
-        { db, req: { session: { userId } } },
+        {
+          db,
+          req: {
+            session: { userId },
+          },
+        }
       ) {
         if (userId === loserId) {
           throw new Error("You can't play yourself");
@@ -246,23 +265,18 @@ const Mutation = mutationType({
         });
 
         const form = new FormData();
-        form.append(
-          "replay",
-          stream,
-          { filename },
-        );
+        form.append("replay", stream, { filename });
 
-        const fetchRes = await fetch(
-          "http://34.94.165.86:8080/",
-          { method: "POST", body: form },
-        );
+        const fetchRes = await fetch("http://34.94.165.86:8080/", {
+          method: "POST",
+          body: form,
+        });
 
         const gameLog = await fetchRes.text();
 
-        await gamesBucket.upload(
-          stream.path as string,
-          { destination: `${gameId}.WAgame` },
-        );
+        await gamesBucket.upload(stream.path as string, {
+          destination: `${gameId}.WAgame`,
+        });
 
         const logFile = gamesBucket.file(`${gameId}.log`);
         await logFile.save(gameLog);
@@ -285,22 +299,18 @@ const Mutation = mutationType({
             duration,
             startedAt,
             reportedAt: new Date(),
-            replayUrl:
-              `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.WAgame`,
-            logUrl:
-              `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.log`,
+            replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.WAgame`,
+            logUrl: `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.log`,
             players: {
               create: map(
-                (
-                  {
-                    teamName,
-                    teamColor,
-                    won,
-                    turnCount,
-                    turnTime,
-                    retreatTime,
-                  },
-                ) => ({
+                ({
+                  teamName,
+                  teamColor,
+                  won,
+                  turnCount,
+                  turnTime,
+                  retreatTime,
+                }) => ({
                   user: { connect: { id: won ? userId : loserId } },
                   rank: {
                     connect: {
@@ -317,7 +327,7 @@ const Mutation = mutationType({
                   turnTime,
                   won,
                 }),
-                players,
+                players
               ),
             },
           },
