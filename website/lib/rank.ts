@@ -9,8 +9,11 @@ const createGlickoPlayer = createPlayerFactory({
 });
 
 export function createDefaultRank() {
-  const { rating, ratingDeviation, volatility: ratingVolatility } =
-    createGlickoPlayer();
+  const {
+    rating,
+    ratingDeviation,
+    volatility: ratingVolatility,
+  } = createGlickoPlayer();
   return { rating, ratingDeviation, ratingVolatility };
 }
 
@@ -26,21 +29,18 @@ export async function updateRanks(
   db: PrismaClient,
   leagueId: string,
   winnerUserId: string,
-  loserUserId: string,
+  loserUserId: string
 ) {
   const winnerWhere = { userId_leagueId: { userId: winnerUserId, leagueId } };
   const loserWhere = { userId_leagueId: { userId: loserUserId, leagueId } };
-  const winnerRank = await db.rank.findOne(
-    { where: winnerWhere },
-  );
-  const loserRank = await db.rank.findOne(
-    { where: loserWhere },
-  );
+  const winnerRank = await db.rank.findOne({ where: winnerWhere });
+  const loserRank = await db.rank.findOne({ where: loserWhere });
 
   const winnerGlickoPlayer = getGlickoPlayer(winnerRank);
   const loserGlickoPlayer = getGlickoPlayer(loserRank);
 
   winnerGlickoPlayer.addResult(loserGlickoPlayer, Outcome.Win);
+  loserGlickoPlayer.addResult(winnerGlickoPlayer, Outcome.Loss);
 
   winnerGlickoPlayer.updateRating();
   loserGlickoPlayer.updateRating();
