@@ -31,8 +31,6 @@ const credentials = JSON.parse(
   Buffer.from(process.env.GCLOUD_CREDENTIALS, "base64").toString()
 );
 
-console.log({ credentials });
-
 const storage = new Storage({
   projectId: "wormsleague",
   credentials,
