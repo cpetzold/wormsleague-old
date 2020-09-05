@@ -38,6 +38,7 @@ export function parseGameLog(log: string): ParsedGame {
     teamTimeTotals,
     roundCount,
     timeTotals,
+    damageTotals,
     result,
     awards,
   ] = log.split("\r\n\r\n").map((s) => s.split("\r\n"));
