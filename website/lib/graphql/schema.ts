@@ -281,6 +281,8 @@ const Mutation = mutationType({
 
         const { startedAt, duration, players } = parseGameLog(gameLog);
 
+        console.log({ startedAt, duration, players });
+
         if (players.length !== 2) {
           throw new Error("Only 1v1 supported currently");
         }
