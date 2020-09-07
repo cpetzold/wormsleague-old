@@ -11,6 +11,7 @@ import {
 import Flag from "./Flag";
 import { Standings_RankFragment } from "../lib/graphql/generated/client";
 import gql from "graphql-tag";
+import { ratingImage } from "../lib/rank";
 import { sortWith } from "ramda";
 
 export default function Standings({
@@ -49,6 +50,8 @@ export default function Standings({
                 <TableCell>{i + 1}</TableCell>
                 <TableCell>
                   <Box display="flex" alignItems="center">
+                    <img src={ratingImage(rating)} height="24" />
+                    &ensp;
                     {username}
                   </Box>
                 </TableCell>

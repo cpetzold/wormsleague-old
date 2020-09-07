@@ -1,6 +1,18 @@
 import Player, { Outcome, createPlayerFactory } from "glicko-two";
 import { PrismaClient, Rank } from "@prisma/client";
 
+export function ratingImage(rating: number) {
+  if (rating > 1800) {
+    return "/star.png";
+  } else if (rating > 1600) {
+    return "/rank3.png";
+  } else if (rating > 1500) {
+    return "/rank2.png";
+  } else {
+    return "/rank1.png";
+  }
+}
+
 const createGlickoPlayer = createPlayerFactory({
   defaultRating: 1500,
   defaultRatingDeviation: 350,

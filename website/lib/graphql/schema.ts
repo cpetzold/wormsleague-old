@@ -67,6 +67,7 @@ const Player = objectType({
   name: "Player",
   definition(t) {
     t.model.user();
+    t.model.rank();
   },
 });
 

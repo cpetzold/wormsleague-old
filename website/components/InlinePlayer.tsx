@@ -3,6 +3,7 @@ import { Avatar, Box } from "@material-ui/core";
 import Flag from "./Flag";
 import { InlinePlayer_PlayerFragment } from "../lib/graphql/generated/client";
 import gql from "graphql-tag";
+import { ratingImage } from "../lib/rank";
 
 export default function InlinePlayer({
   player,
@@ -12,7 +13,9 @@ export default function InlinePlayer({
   return (
     <Box display="flex" alignItems="center">
       <Flag countryCode={player.user.countryCode} />
-      &emsp;
+      &ensp;
+      <img src={ratingImage(player.rank.rating)} width="24" />
+      &ensp;
       {player.user.username}
     </Box>
   );
@@ -24,6 +27,9 @@ InlinePlayer.fragments = {
       user {
         username
         countryCode
+      }
+      rank {
+        rating
       }
     }
   `,
