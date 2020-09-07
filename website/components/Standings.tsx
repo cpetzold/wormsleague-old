@@ -6,6 +6,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
 } from "@material-ui/core";
 
 import Flag from "./Flag";
@@ -29,7 +30,6 @@ export default function Standings({
             <TableCell>Player</TableCell>
             <TableCell>Country</TableCell>
             <TableCell>Rating</TableCell>
-            <TableCell>Deviation</TableCell>
             <TableCell>Wins</TableCell>
             <TableCell>Losses</TableCell>
           </TableRow>
@@ -58,8 +58,14 @@ export default function Standings({
                 <TableCell>
                   <Flag countryCode={countryCode} />
                 </TableCell>
-                <TableCell>{Math.round(rating)}</TableCell>
-                <TableCell>{Math.round(ratingDeviation)}</TableCell>
+                <TableCell>
+                  <Box display="flex" alignItems="center">
+                    {Math.round(rating)}
+                    <Typography variant="caption" color="textSecondary">
+                      &nbsp;±&nbsp;{Math.round(ratingDeviation)}
+                    </Typography>
+                  </Box>
+                </TableCell>
                 <TableCell>{wins}</TableCell>
                 <TableCell>{losses}</TableCell>
               </TableRow>

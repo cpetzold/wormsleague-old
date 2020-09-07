@@ -68,6 +68,7 @@ const Player = objectType({
   definition(t) {
     t.model.user();
     t.model.rank();
+    t.model.snapshotRating();
   },
 });
 
@@ -289,7 +290,12 @@ const Mutation = mutationType({
         // TODO: Support more leagues
         const [league] = await db.league.findMany();
 
-        await updateRanks(db, league.id, userId, loserId);
+        const { winnerGlickoPlayer, loserGlickoPlayer } = await updateRanks(
+          db,
+          league.id,
+          userId,
+          loserId
+        );
 
         return db.game.create({
           data: {
@@ -325,6 +331,9 @@ const Mutation = mutationType({
                   turnCount,
                   turnTime,
                   won,
+                  snapshotRating: won
+                    ? winnerGlickoPlayer.rating
+                    : loserGlickoPlayer.rating,
                 }),
                 players
               ),

@@ -76,4 +76,9 @@ export async function updateRanks(
       losses: loserRank.losses + 1,
     },
   });
+
+  return {
+    winnerGlickoPlayer,
+    loserGlickoPlayer,
+  };
 }

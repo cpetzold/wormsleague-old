@@ -14,8 +14,12 @@ export default function InlinePlayer({
     <Box display="flex" alignItems="center">
       <Flag countryCode={player.user.countryCode} />
       &ensp;
-      <img src={ratingImage(player.rank.rating)} width="24" />
-      &ensp;
+      {player?.snapshotRating && (
+        <>
+          <img src={ratingImage(player.snapshotRating)} width="24" />
+          &ensp;
+        </>
+      )}
       {player.user.username}
     </Box>
   );
@@ -28,9 +32,7 @@ InlinePlayer.fragments = {
         username
         countryCode
       }
-      rank {
-        rating
-      }
+      snapshotRating
     }
   `,
 };
