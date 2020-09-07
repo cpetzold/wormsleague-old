@@ -13,7 +13,7 @@ export function ratingImage(rating: number) {
   }
 }
 
-const createGlickoPlayer = createPlayerFactory({
+export const createGlickoPlayer = createPlayerFactory({
   defaultRating: 1500,
   defaultRatingDeviation: 350,
   defaultVolatility: 0.06,
@@ -54,6 +54,9 @@ export async function updateRanks(
   winnerGlickoPlayer.addResult(loserGlickoPlayer, Outcome.Win);
   loserGlickoPlayer.addResult(winnerGlickoPlayer, Outcome.Loss);
 
+  const winnerSnapshotRating = winnerGlickoPlayer.rating;
+  const loserSnapshotRating = loserGlickoPlayer.rating;
+
   winnerGlickoPlayer.updateRating();
   loserGlickoPlayer.updateRating();
 
@@ -79,6 +82,8 @@ export async function updateRanks(
 
   return {
     winnerGlickoPlayer,
+    winnerSnapshotRating,
     loserGlickoPlayer,
+    loserSnapshotRating,
   };
 }

@@ -1,5 +1,6 @@
 import { Avatar, Box } from "@material-ui/core";
 
+import ArrowForwardIcon from "@material-ui/icons/ArrowForward";
 import Flag from "./Flag";
 import { InlinePlayer_PlayerFragment } from "../lib/graphql/generated/client";
 import gql from "graphql-tag";
@@ -10,13 +11,18 @@ export default function InlinePlayer({
 }: {
   player: InlinePlayer_PlayerFragment;
 }) {
+  const { snapshotRating, ratingChange } = player;
+  const newRating = snapshotRating + ratingChange;
+
   return (
     <Box display="flex" alignItems="center">
       <Flag countryCode={player.user.countryCode} />
       &ensp;
-      {player?.snapshotRating && (
+      {snapshotRating && (
         <>
-          <img src={ratingImage(player.snapshotRating)} width="24" />
+          <img src={ratingImage(snapshotRating)} width="24" />
+          <ArrowForwardIcon fontSize="small" />
+          <img src={ratingImage(newRating)} width="24" />
           &ensp;
         </>
       )}
@@ -33,6 +39,7 @@ InlinePlayer.fragments = {
         countryCode
       }
       snapshotRating
+      ratingChange
     }
   `,
 };
