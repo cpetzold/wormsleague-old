@@ -109,23 +109,27 @@ export default function Page({ children }) {
                 </>
               ) : (
                 <>
-                  <Button onClick={() => setLoginOpen(true)}>Log in</Button>
+                  <Button
+                    onClick={() => setLoginOpen(true)}
+                    className={classes.button}
+                  >
+                    Log in
+                  </Button>
                   <Button
                     variant="contained"
                     color="primary"
-                    className={classes.button}
                     onClick={() => setSignupOpen(true)}
                   >
                     Sign up
                   </Button>
                 </>
               ))}
-            <img
+            {/* <img
               style={{ cursor: "pointer" }}
               onClick={() => togglePaletteType()}
               src={paletteType === "dark" ? "/light-off.png" : "/light-on.png"}
               height={32}
-            />
+            /> */}
           </Box>
         </Toolbar>
       </AppBar>

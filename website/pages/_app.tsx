@@ -24,7 +24,8 @@ const schema = buildClientSchema(
 );
 
 function App({ Component, pageProps, apollo }) {
-  const [paletteType] = usePaletteType();
+  // const [paletteType] = usePaletteType();
+  const paletteType = "dark";
 
   const theme = React.useMemo(
     () =>
