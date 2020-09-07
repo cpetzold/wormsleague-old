@@ -28,13 +28,23 @@ export default function Standings({
             <TableCell>Player</TableCell>
             <TableCell>Country</TableCell>
             <TableCell>Rating</TableCell>
+            <TableCell>Deviation</TableCell>
             <TableCell>Wins</TableCell>
             <TableCell>Losses</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {sortedRanks.map(
-            ({ user: { username, countryCode }, rating, wins, losses }, i) => (
+            (
+              {
+                user: { username, countryCode },
+                rating,
+                ratingDeviation,
+                wins,
+                losses,
+              },
+              i
+            ) => (
               <TableRow key={username}>
                 <TableCell>{i + 1}</TableCell>
                 <TableCell>
@@ -46,6 +56,7 @@ export default function Standings({
                   <Flag countryCode={countryCode} />
                 </TableCell>
                 <TableCell>{Math.round(rating)}</TableCell>
+                <TableCell>{Math.round(ratingDeviation)}</TableCell>
                 <TableCell>{wins}</TableCell>
                 <TableCell>{losses}</TableCell>
               </TableRow>
