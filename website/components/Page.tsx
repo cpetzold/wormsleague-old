@@ -67,13 +67,11 @@ export default function Page({ children }) {
   const { loading, data } = useQuery(PAGE_QUERY);
   const me = data?.me;
 
-  if (loading) return null;
-
   return (
     <>
       <Head>
         <title>Worms League</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
       <AppBar color="inherit" position="sticky">
         <Toolbar>
@@ -87,40 +85,41 @@ export default function Page({ children }) {
           </Box>
 
           <Box display="flex" justifySelf="flex-end" alignItems="center">
-            {me ? (
-              <>
-                <Button
-                  onClick={async () => {
-                    await logout();
-                    router.reload();
-                  }}
-                  className={classes.button}
-                >
-                  Log out
-                </Button>
-                <Fab
-                  variant="extended"
-                  color="primary"
-                  size="medium"
-                  aria-label="report win"
-                  onClick={() => setReportOpen(true)}
-                >
-                  <AddIcon /> Report win
-                </Fab>
-              </>
-            ) : (
-              <>
-                <Button onClick={() => setLoginOpen(true)}>Log in</Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  className={classes.button}
-                  onClick={() => setSignupOpen(true)}
-                >
-                  Sign up
-                </Button>
-              </>
-            )}
+            {!loading &&
+              (me ? (
+                <>
+                  <Button
+                    onClick={async () => {
+                      await logout();
+                      router.reload();
+                    }}
+                    className={classes.button}
+                  >
+                    Log out
+                  </Button>
+                  <Fab
+                    variant="extended"
+                    color="primary"
+                    size="medium"
+                    aria-label="report win"
+                    onClick={() => setReportOpen(true)}
+                  >
+                    <AddIcon /> Report win
+                  </Fab>
+                </>
+              ) : (
+                <>
+                  <Button onClick={() => setLoginOpen(true)}>Log in</Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    className={classes.button}
+                    onClick={() => setSignupOpen(true)}
+                  >
+                    Sign up
+                  </Button>
+                </>
+              ))}
             <img
               style={{ cursor: "pointer" }}
               onClick={() => togglePaletteType()}
