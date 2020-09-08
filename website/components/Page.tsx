@@ -81,7 +81,7 @@ export default function Page({ children }) {
             alignItems="center"
             flexGrow={1}
           >
-            <img src="/logo.png" height={48} />
+            <img src="/favicon.png" height={40} />
           </Box>
 
           <Box display="flex" justifySelf="flex-end" alignItems="center">

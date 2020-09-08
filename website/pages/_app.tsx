@@ -4,6 +4,7 @@ import {
   ApolloProvider,
   InMemoryCache,
 } from "@apollo/client";
+import { Box, LinearProgress } from "@material-ui/core";
 import { IntrospectionQuery, buildClientSchema } from "graphql";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
 import { blue, green } from "@material-ui/core/colors";
@@ -44,9 +45,12 @@ function App({ Component, pageProps, apollo }) {
       <ThemeProvider theme={theme}>
         <Page>
           <Head>
-            <title>WormsLeague</title>
+            <title>Worms League</title>
           </Head>
           <CssBaseline />
+          {/* <Box position="fixed" top={0} zIndex={1200} width="100%">
+            <LinearProgress color="primary" />
+          </Box> */}
           <Component {...pageProps} />
         </Page>
       </ThemeProvider>
