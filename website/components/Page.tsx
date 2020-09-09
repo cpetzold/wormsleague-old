@@ -103,6 +103,7 @@ export default function Page({ children }) {
                     size="medium"
                     aria-label="report win"
                     onClick={() => setReportOpen(true)}
+                    disabled
                   >
                     <AddIcon /> Report win
                   </Fab>
