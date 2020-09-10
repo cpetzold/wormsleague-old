@@ -1,5 +1,3 @@
-import * as uuid from "uuid";
-
 import {
   arg,
   makeSchema,
@@ -11,6 +9,7 @@ import {
 } from "@nexus/schema";
 import { createDefaultRank, updateRanks } from "../rank";
 import { head, map } from "ramda";
+import hasha from "hasha";
 
 import { FileUpload } from "graphql-upload";
 import FormData from "form-data";
@@ -255,7 +254,7 @@ const Mutation = mutationType({
         }: Context
       ) {
         if (userId === loserId) {
-          throw new Error("You can't play yourself");
+          throw new Error("You can't play yourself.");
         }
 
         const { filename: replayFilename, createReadStream } = await replay;
@@ -265,13 +264,25 @@ const Mutation = mutationType({
           stream.once("readable", resolve);
         });
 
+        const replayHash = await hasha.fromFile(stream.path as string);
+        const gamesWithReplayHash = await db.game.findMany({
+          where: { replayHash },
+        });
+
+        if (gamesWithReplayHash.length > 0) {
+          throw new Error("This game has already been reported.");
+        }
+
         const form = new FormData();
         form.append("replay", stream, { filename: replayFilename });
 
+        console.log("A");
         const fetchRes = await fetch("http://34.94.165.86:8080/", {
           method: "POST",
           body: form,
+          timeout: 5000,
         });
+        console.log("B");
 
         const gameLog = await fetchRes.text();
         const { startedAt, duration, players } = parseGameLog(gameLog);
@@ -304,6 +315,7 @@ const Mutation = mutationType({
             duration,
             startedAt,
             reportedAt: new Date(),
+            replayHash,
             replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.WAgame`,
             logUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.log`,
             players: {
