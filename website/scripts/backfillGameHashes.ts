@@ -2,14 +2,15 @@ import { PrismaClient } from "@prisma/client";
 import fetch from "node-fetch";
 import hasha from "hasha";
 
-const db = new PrismaClient();
-process.env.PROD_DATABASE_URL && {
-  datasources: {
-    db: {
-      url: process.env.PROD_DATABASE_URL,
+const db = new PrismaClient(
+  process.env.PROD_DATABASE_URL && {
+    datasources: {
+      db: {
+        url: process.env.PROD_DATABASE_URL,
+      },
     },
-  },
-};
+  }
+);
 
 async function main() {
   const games = await db.game.findMany();

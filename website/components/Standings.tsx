@@ -32,6 +32,7 @@ export default function Standings({
             <TableCell>Rating</TableCell>
             <TableCell>Wins</TableCell>
             <TableCell>Losses</TableCell>
+            <TableCell>Win %</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -68,6 +69,9 @@ export default function Standings({
                 </TableCell>
                 <TableCell>{wins}</TableCell>
                 <TableCell>{losses}</TableCell>
+                <TableCell>
+                  {Math.round((wins / (wins + losses) || 0) * 100)}%
+                </TableCell>
               </TableRow>
             )
           )}
