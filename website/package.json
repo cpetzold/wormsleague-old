@@ -9,8 +9,7 @@
     "generate": "npm run generate:prisma && npm run generate:nexus && npm run generate:graphql",
     "dev": "next dev",
     "migrate": "prisma migrate up --experimental",
-    "build": "npm run generate && next build",
-    "prestart": "npm run migrate",
+    "build": "npm run migrate && npm run generate && next build",
     "start": "next start -p $PORT"
   },
   "dependencies": {
