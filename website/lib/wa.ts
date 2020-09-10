@@ -24,9 +24,12 @@ type ParsedGamePlayer = {
   won: boolean;
 };
 
+type GameType = "match" | "round";
+
 type ParsedGame = {
   startedAt: Date;
   duration: number;
+  gameType: GameType;
   players: ParsedGamePlayer[];
 };
 
@@ -42,6 +45,12 @@ export function parseGameLog(log: string): ParsedGame {
     result,
     awards,
   ] = log.split("\r\n\r\n").map((s) => s.split("\r\n"));
+
+  const [
+    s_,
+    winner,
+    gameType,
+  ] = /\r\n\r\n([^\r\n]+) wins the (match(?=!)|round(?=\.)).\r\n\r\n/.exec(log);
 
   const startedAtLine = info[0].startsWith("Game Started at")
     ? info[0]
@@ -87,10 +96,9 @@ export function parseGameLog(log: string): ParsedGame {
   );
   const duration = parseDuration(durationString);
 
-  const parsedResult = tmpl(result[0], "{{winner}} wins");
-  if (parsedResult) {
+  if (winner) {
     const { username } = find<ParsedGamePlayer>(
-      propEq("teamName", parsedResult.winner),
+      propEq("teamName", winner),
       values(playersMap)
     );
     playersMap[username].won = true;
@@ -99,17 +107,18 @@ export function parseGameLog(log: string): ParsedGame {
   return {
     startedAt,
     duration,
+    gameType: gameType as GameType,
     players: values(mergeWith(merge, playersMap, playerTimesMap)),
   };
 }
 
 export function parseDuration(str: string) {
-  const { h, m, s, ms } = tmpl(
+  const { h, m, s, cs } = tmpl(
     str,
-    `{{h}}:{{m}}:{{s}}${str.includes(".") ? ".{{ms}}" : ""}`
+    `{{h}}:{{m}}:{{s}}${str.includes(".") ? ".{{cs}}" : ""}`
   );
   return (
     (parseInt(h) * 60 * 60 + parseInt(m) * 60 + parseInt(s)) * 1000 +
-    parseInt(ms ? ms : 0)
+    parseInt(cs ? cs : 0) * 10
   );
 }

@@ -21,6 +21,7 @@ import { ServerResponse } from "http";
 import { Storage } from "@google-cloud/storage";
 import bcrypt from "bcrypt";
 import fetch from "node-fetch";
+import { format } from "date-fns";
 import { login } from "../auth";
 import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
 import { parseGameLog } from "../wa";
@@ -251,14 +252,13 @@ const Mutation = mutationType({
           req: {
             session: { userId },
           },
-        }
+        }: Context
       ) {
         if (userId === loserId) {
           throw new Error("You can't play yourself");
         }
 
-        const { filename, createReadStream } = await replay;
-        const gameId = uuid.v4();
+        const { filename: replayFilename, createReadStream } = await replay;
         const stream = createReadStream();
 
         await new Promise((resolve, reject) => {
@@ -266,7 +266,7 @@ const Mutation = mutationType({
         });
 
         const form = new FormData();
-        form.append("replay", stream, { filename });
+        form.append("replay", stream, { filename: replayFilename });
 
         const fetchRes = await fetch("http://34.94.165.86:8080/", {
           method: "POST",
@@ -274,14 +274,6 @@ const Mutation = mutationType({
         });
 
         const gameLog = await fetchRes.text();
-
-        await gamesBucket.upload(stream.path as string, {
-          destination: `${gameId}.WAgame`,
-        });
-
-        const logFile = gamesBucket.file(`${gameId}.log`);
-        await logFile.save(gameLog);
-
         const { startedAt, duration, players } = parseGameLog(gameLog);
 
         if (players.length !== 2) {
@@ -289,24 +281,31 @@ const Mutation = mutationType({
         }
 
         // TODO: Support more leagues
-        const [league] = await db.league.findMany();
+        const [winner, loser, [league]] = await Promise.all([
+          db.user.findOne({ where: { id: userId } }),
+          db.user.findOne({ where: { id: loserId } }),
+          db.league.findMany(),
+        ]);
 
-        const {
-          winnerGlickoPlayer,
-          winnerSnapshotRating,
-          loserGlickoPlayer,
-          loserSnapshotRating,
-        } = await updateRanks(db, league.id, userId, loserId);
+        const filename = `${format(startedAt, "yyyy-MM-dd HH.mm.ss")} [WL - ${
+          league.name
+        }] ${winner.username}, ${loser.username}`;
 
-        return db.game.create({
+        await gamesBucket.upload(stream.path as string, {
+          destination: `${filename}.WAgame`,
+        });
+
+        const logFile = gamesBucket.file(`${filename}.log`);
+        await logFile.save(gameLog);
+
+        const game = await db.game.create({
           data: {
-            id: gameId,
             league: { connect: { id: league.id } },
             duration,
             startedAt,
             reportedAt: new Date(),
-            replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.WAgame`,
-            logUrl: `https://storage.googleapis.com/${gamesBucket.name}/${gameId}.log`,
+            replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.WAgame`,
+            logUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.log`,
             players: {
               create: map(
                 ({
@@ -332,18 +331,16 @@ const Mutation = mutationType({
                   turnCount,
                   turnTime,
                   won,
-                  snapshotRating: won
-                    ? winnerSnapshotRating
-                    : loserSnapshotRating,
-                  ratingChange: won
-                    ? winnerGlickoPlayer.rating - winnerSnapshotRating
-                    : loserGlickoPlayer.rating - loserSnapshotRating,
                 }),
                 players
               ),
             },
           },
         });
+
+        await updateRanks(db, league.id);
+
+        return game;
       },
     });
   },

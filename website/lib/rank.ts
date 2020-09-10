@@ -1,5 +1,6 @@
-import Player, { Outcome, createPlayerFactory } from "glicko-two";
-import { PrismaClient, Rank } from "@prisma/client";
+import Player, { Match, Outcome, createPlayerFactory } from "glicko-two";
+import { PrismaClient } from "@prisma/client";
+import { filter, mapObjIndexed, sort, sum, values } from "ramda";
 
 export function ratingImage(rating: number) {
   if (rating > 1800) {
@@ -29,61 +30,88 @@ export function createDefaultRank() {
   return { rating, ratingDeviation, ratingVolatility };
 }
 
-function getGlickoPlayer({ rating, ratingDeviation, ratingVolatility }: Rank) {
-  return createGlickoPlayer({
-    rating,
-    ratingDeviation,
-    volatility: ratingVolatility,
-  });
+class RecordedPlayer extends Player {
+  wins: number;
+  losses: number;
 }
 
-export async function updateRanks(
-  db: PrismaClient,
-  leagueId: string,
-  winnerUserId: string,
-  loserUserId: string
-) {
-  const winnerWhere = { userId_leagueId: { userId: winnerUserId, leagueId } };
-  const loserWhere = { userId_leagueId: { userId: loserUserId, leagueId } };
-  const winnerRank = await db.rank.findOne({ where: winnerWhere });
-  const loserRank = await db.rank.findOne({ where: loserWhere });
+export async function updateRanks(db: PrismaClient, leagueId: string) {
+  const glickoPlayers: { [userId: string]: RecordedPlayer } = {};
+  const games = await db.game.findMany({ where: { leagueId } });
+  const sortedGames = sort(
+    (a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
+    games
+  );
 
-  const winnerGlickoPlayer = getGlickoPlayer(winnerRank);
-  const loserGlickoPlayer = getGlickoPlayer(loserRank);
-
-  winnerGlickoPlayer.addResult(loserGlickoPlayer, Outcome.Win);
-  loserGlickoPlayer.addResult(winnerGlickoPlayer, Outcome.Loss);
-
-  const winnerSnapshotRating = winnerGlickoPlayer.rating;
-  const loserSnapshotRating = loserGlickoPlayer.rating;
-
-  winnerGlickoPlayer.updateRating();
-  loserGlickoPlayer.updateRating();
-
-  await db.rank.update({
-    where: winnerWhere,
+  await db.rank.updateMany({
     data: {
-      rating: winnerGlickoPlayer.rating,
-      ratingDeviation: winnerGlickoPlayer.ratingDeviation,
-      ratingVolatility: winnerGlickoPlayer.volatility,
-      wins: winnerRank.wins + 1,
+      losses: 0,
+      wins: 0,
+      ...createDefaultRank(),
     },
   });
 
-  await db.rank.update({
-    where: loserWhere,
-    data: {
-      rating: loserGlickoPlayer.rating,
-      ratingDeviation: loserGlickoPlayer.ratingDeviation,
-      ratingVolatility: loserGlickoPlayer.volatility,
-      losses: loserRank.losses + 1,
-    },
-  });
+  for (const game of sortedGames) {
+    const players = await db.player.findMany({ where: { gameId: game.id } });
 
-  return {
-    winnerGlickoPlayer,
-    winnerSnapshotRating,
-    loserGlickoPlayer,
-    loserSnapshotRating,
-  };
+    const winner = players.find((p) => p.won);
+    const loser = players.find((p) => !p.won);
+
+    glickoPlayers[winner.userId] = (glickoPlayers[winner.userId] ||
+      createGlickoPlayer()) as RecordedPlayer;
+
+    glickoPlayers[loser.userId] = (glickoPlayers[loser.userId] ||
+      createGlickoPlayer()) as RecordedPlayer;
+
+    const winnerSnapshotRating = glickoPlayers[winner.userId].rating;
+    const loserSnapshotRating = glickoPlayers[loser.userId].rating;
+
+    glickoPlayers[winner.userId].wins++;
+    glickoPlayers[loser.userId].losses++;
+
+    const match = new Match(
+      glickoPlayers[winner.userId],
+      glickoPlayers[loser.userId]
+    );
+    match.reportTeamAWon();
+    match.updatePlayerRatings();
+
+    const winnerPlayerUpdate = db.player.update({
+      where: {
+        userId_gameId: { userId: winner.userId, gameId: game.id },
+      },
+      data: {
+        snapshotRating: winnerSnapshotRating,
+        ratingChange:
+          glickoPlayers[winner.userId].rating - winnerSnapshotRating,
+      },
+    });
+
+    const loserPlayerUpdate = db.player.update({
+      where: { userId_gameId: { userId: loser.userId, gameId: game.id } },
+      data: {
+        snapshotRating: loserSnapshotRating,
+        ratingChange: glickoPlayers[loser.userId].rating - loserSnapshotRating,
+      },
+    });
+
+    await db.$transaction([winnerPlayerUpdate, loserPlayerUpdate]);
+  }
+
+  const rankUpdates = values(
+    mapObjIndexed((player, userId) => {
+      return db.rank.update({
+        where: { userId_leagueId: { userId, leagueId } },
+        data: {
+          wins: player.wins,
+          losses: player.losses,
+          rating: player.rating,
+          ratingDeviation: player.ratingDeviation,
+          ratingVolatility: player.volatility,
+        },
+      });
+    }, glickoPlayers)
+  );
+
+  await db.$transaction(rankUpdates);
 }

@@ -23,7 +23,7 @@ import { useMutation, useQuery } from "@apollo/client";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import { HOME_QUERY } from "../pages/index";
 import gql from "graphql-tag";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 const REPORT_QUERY = gql`
   query Report {
@@ -63,95 +63,114 @@ const useStyles = makeStyles((theme: Theme) =>
 
 export default function ReportDialog({ open, onSuccess, onClose }) {
   const classes = useStyles();
-  const { loading, data } = useQuery<ReportQuery, ReportQueryVariables>(
-    REPORT_QUERY,
-  );
+  const fileInputRef = useRef<HTMLInputElement>();
+  const { loading: dataLoading, data } = useQuery<
+    ReportQuery,
+    ReportQueryVariables
+  >(REPORT_QUERY);
   const [loser, setLoser] = useState(null);
   const [replay, setReplay] = useState<File>(null);
 
-  const [reportWin, { called }] = useMutation<
+  const handleClose = () => {
+    setLoser(null);
+    setReplay(null);
+    fileInputRef.current.value = null;
+    onClose();
+  };
+
+  const [reportWin, { loading }] = useMutation<
     ReportWinMutation,
     ReportWinMutationVariables
   >(REPORT_WIN_MUTATION, { refetchQueries: [{ query: HOME_QUERY }] });
 
-  if (loading) return null;
+  if (dataLoading) return null;
 
   const { me, users } = data;
   const possibleLosers = users.filter(({ id }) => id !== me.id);
-  return (<Dialog open={open} onClose={onClose}>
-    <form
-      onSubmit={async (e) => {
-        e.preventDefault();
+  return (
+    <Dialog open={open} onClose={handleClose}>
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
 
-        await reportWin({
-          variables: {
-            loserId: loser.id,
-            replay,
-          },
-        });
+          await reportWin({
+            variables: {
+              loserId: loser.id,
+              replay,
+            },
+          });
 
-        setLoser(null);
-        setReplay(null);
-        onSuccess();
-      }}
-    >
-      <DialogTitle>Report win</DialogTitle>
-      <DialogContent>
-        <Box minWidth={400}>
-          <Autocomplete
-            options={possibleLosers}
-            value={loser}
-            onChange={(e, value) => setLoser(value)}
-            getOptionLabel={(user) => user.username}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Loser"
-                variant="outlined"
-                margin="normal"
-              />
-            )}
-          />
-          <label>
-            <input
-              id="replay"
-              type="file"
-              accept=".WAgame"
-              disabled={called}
-              onChange={async ({ target: { files } }) => {
-                setReplay(files[0]);
-              }}
-              style={{ display: "none" }}
+          setLoser(null);
+          setReplay(null);
+          onSuccess();
+        }}
+      >
+        <DialogTitle>Report win</DialogTitle>
+        <DialogContent>
+          <Box minWidth={400}>
+            <Autocomplete
+              options={possibleLosers}
+              value={loser}
+              onChange={(e, value) => setLoser(value)}
+              getOptionLabel={(user) => user.username}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Loser"
+                  variant="outlined"
+                  margin="normal"
+                />
+              )}
             />
-            <Box display="flex" alignItems="center" mt={1}>
-              <Box flexShrink={0}>
-                <Button variant="contained" component="span" disabled={called}>
-                  Select replay
-                </Button>
+            <label>
+              <input
+                ref={fileInputRef}
+                id="replay"
+                type="file"
+                accept=".WAgame"
+                disabled={loading}
+                onChange={async ({ target: { files } }) => {
+                  setReplay(files[0]);
+                }}
+                style={{ display: "none" }}
+              />
+              <Box display="flex" alignItems="center" mt={1}>
+                <Box flexShrink={0}>
+                  <Button
+                    variant="contained"
+                    component="span"
+                    disabled={loading}
+                  >
+                    Select replay
+                  </Button>
+                </Box>
+                &emsp;
+                <Typography noWrap>{replay?.name}</Typography>
               </Box>
-              &emsp;
-              <Typography noWrap>{replay?.name}</Typography>
-            </Box>
-          </label>
-        </Box>
-      </DialogContent>
+            </label>
+          </Box>
+        </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose} disabled={called}>Cancel</Button>
-        <div className={classes.wrapper}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            size="large"
-            disabled={called}
-          >
-            Report
+        <DialogActions>
+          <Button onClick={handleClose} disabled={loading}>
+            Cancel
           </Button>
-          {called &&
-            <CircularProgress size={24} className={classes.buttonProgress} />}
-        </div>
-      </DialogActions>
-    </form>
-  </Dialog>);
+          <div className={classes.wrapper}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              size="large"
+              disabled={!loser || !replay || loading}
+            >
+              Report
+            </Button>
+            {loading && (
+              <CircularProgress size={24} className={classes.buttonProgress} />
+            )}
+          </div>
+        </DialogActions>
+      </form>
+    </Dialog>
+  );
 }

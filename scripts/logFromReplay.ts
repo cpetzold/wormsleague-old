@@ -60,7 +60,10 @@ app.use(async (context) => {
       `bash -c "docker run --rm -i wa wa-getlog < ${replayFilename} > ${logFilename}"`,
     );
 
-    response.body = await Deno.readTextFile(logFilename);
+    const decoder = new TextDecoder("windows-1252");
+    const data = await Deno.readFile(logFilename);
+
+    response.body = decoder.decode(data);
   } catch (error) {
     console.log(error);
     context.throw(error);
