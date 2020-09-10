@@ -30,13 +30,10 @@ export function createDefaultRank() {
   return { rating, ratingDeviation, ratingVolatility };
 }
 
-class RecordedPlayer extends Player {
-  wins: number;
-  losses: number;
-}
-
 export async function updateRanks(db: PrismaClient, leagueId: string) {
-  const glickoPlayers: { [userId: string]: RecordedPlayer } = {};
+  const glickoPlayers: {
+    [userId: string]: { player: Player; wins: number; losses: number };
+  } = {};
   const games = await db.game.findMany({ where: { leagueId } });
   const sortedGames = sort(
     (a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
@@ -57,21 +54,27 @@ export async function updateRanks(db: PrismaClient, leagueId: string) {
     const winner = players.find((p) => p.won);
     const loser = players.find((p) => !p.won);
 
-    glickoPlayers[winner.userId] = (glickoPlayers[winner.userId] ||
-      createGlickoPlayer()) as RecordedPlayer;
+    glickoPlayers[winner.userId] = glickoPlayers[winner.userId] || {
+      player: createGlickoPlayer(),
+      wins: 0,
+      losses: 0,
+    };
 
-    glickoPlayers[loser.userId] = (glickoPlayers[loser.userId] ||
-      createGlickoPlayer()) as RecordedPlayer;
+    glickoPlayers[loser.userId] = glickoPlayers[loser.userId] || {
+      player: createGlickoPlayer(),
+      wins: 0,
+      losses: 0,
+    };
 
-    const winnerSnapshotRating = glickoPlayers[winner.userId].rating;
-    const loserSnapshotRating = glickoPlayers[loser.userId].rating;
+    const winnerSnapshotRating = glickoPlayers[winner.userId].player.rating;
+    const loserSnapshotRating = glickoPlayers[loser.userId].player.rating;
 
-    glickoPlayers[winner.userId].wins++;
-    glickoPlayers[loser.userId].losses++;
+    glickoPlayers[winner.userId].wins += 1;
+    glickoPlayers[loser.userId].losses += 1;
 
     const match = new Match(
-      glickoPlayers[winner.userId],
-      glickoPlayers[loser.userId]
+      glickoPlayers[winner.userId].player,
+      glickoPlayers[loser.userId].player
     );
     match.reportTeamAWon();
     match.updatePlayerRatings();
@@ -83,7 +86,7 @@ export async function updateRanks(db: PrismaClient, leagueId: string) {
       data: {
         snapshotRating: winnerSnapshotRating,
         ratingChange:
-          glickoPlayers[winner.userId].rating - winnerSnapshotRating,
+          glickoPlayers[winner.userId].player.rating - winnerSnapshotRating,
       },
     });
 
@@ -91,7 +94,8 @@ export async function updateRanks(db: PrismaClient, leagueId: string) {
       where: { userId_gameId: { userId: loser.userId, gameId: game.id } },
       data: {
         snapshotRating: loserSnapshotRating,
-        ratingChange: glickoPlayers[loser.userId].rating - loserSnapshotRating,
+        ratingChange:
+          glickoPlayers[loser.userId].player.rating - loserSnapshotRating,
       },
     });
 
@@ -99,12 +103,12 @@ export async function updateRanks(db: PrismaClient, leagueId: string) {
   }
 
   const rankUpdates = values(
-    mapObjIndexed((player, userId) => {
+    mapObjIndexed(({ player, wins, losses }, userId) => {
       return db.rank.update({
         where: { userId_leagueId: { userId, leagueId } },
         data: {
-          wins: player.wins,
-          losses: player.losses,
+          wins,
+          losses,
           rating: player.rating,
           ratingDeviation: player.ratingDeviation,
           ratingVolatility: player.volatility,
