@@ -40,14 +40,6 @@ export async function updateRanks(db: PrismaClient, leagueId: string) {
     games
   );
 
-  await db.rank.updateMany({
-    data: {
-      losses: 0,
-      wins: 0,
-      ...createDefaultRank(),
-    },
-  });
-
   for (const game of sortedGames) {
     const players = await db.player.findMany({ where: { gameId: game.id } });
 
