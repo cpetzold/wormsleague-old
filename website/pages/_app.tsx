@@ -7,7 +7,7 @@ import {
 import { Box, LinearProgress } from "@material-ui/core";
 import { IntrospectionQuery, buildClientSchema } from "graphql";
 import { ThemeProvider, createMuiTheme } from "@material-ui/core/styles";
-import { blue, green } from "@material-ui/core/colors";
+import { blue, green, red } from "@material-ui/core/colors";
 
 import CssBaseline from "@material-ui/core/CssBaseline";
 import Head from "next/head";
@@ -35,6 +35,9 @@ function App({ Component, pageProps, apollo }) {
           type: paletteType,
           primary: blue,
           secondary: green,
+          error: {
+            main: red[200],
+          },
         },
       }),
     [paletteType]
