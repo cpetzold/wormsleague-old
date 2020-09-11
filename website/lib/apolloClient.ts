@@ -21,11 +21,16 @@ function createApolloClient() {
     },
   };
 
+  const uri =
+    (!process.env.VERCEL_URL.includes("//") ? "https://" : "") +
+    process.env.VERCEL_URL +
+    "/api/graphql";
+
   const uploadLink = createUploadLink({
     credentials: "include",
-    uri: process.env.API_URL,
+    uri,
     fetchOptions: {
-      credentials: "inlude",
+      credentials: "include",
     },
   });
 

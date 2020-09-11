@@ -50,15 +50,18 @@ export default function Home() {
 
 export async function getStaticProps() {
   const apolloClient = initializeApollo();
+  const staticProps = (props) => ({ props, revalidate: 1 });
 
-  await apolloClient.query({
-    query: HOME_QUERY,
+  try {
+    await apolloClient.query({
+      query: HOME_QUERY,
+    });
+  } catch (e) {
+    console.log(e);
+    return staticProps({});
+  }
+
+  return staticProps({
+    initialApolloState: apolloClient.cache.extract(),
   });
-
-  return {
-    props: {
-      initialApolloState: apolloClient.cache.extract(),
-    },
-    revalidate: 1,
-  };
 }
