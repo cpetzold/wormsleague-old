@@ -9,7 +9,6 @@ import {
 } from "@nexus/schema";
 import { createDefaultRank, updateRanks } from "../rank";
 import { head, map } from "ramda";
-import hasha from "hasha";
 
 import { FileUpload } from "graphql-upload";
 import FormData from "form-data";
@@ -21,6 +20,7 @@ import { Storage } from "@google-cloud/storage";
 import bcrypt from "bcrypt";
 import fetch from "node-fetch";
 import { format } from "date-fns";
+import hasha from "hasha";
 import { login } from "../auth";
 import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
 import { parseGameLog } from "../wa";
@@ -323,16 +323,16 @@ const Mutation = mutationType({
                 ({
                   teamName,
                   teamColor,
-                  won,
+                  local,
                   turnCount,
                   turnTime,
                   retreatTime,
                 }) => ({
-                  user: { connect: { id: won ? userId : loserId } },
+                  user: { connect: { id: local ? userId : loserId } },
                   rank: {
                     connect: {
                       userId_leagueId: {
-                        userId: won ? userId : loserId,
+                        userId: local ? userId : loserId,
                         leagueId: league.id,
                       },
                     },
@@ -342,7 +342,7 @@ const Mutation = mutationType({
                   teamName,
                   turnCount,
                   turnTime,
-                  won,
+                  won: local,
                 }),
                 players
               ),

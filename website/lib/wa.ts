@@ -1,18 +1,16 @@
-import * as tmpl from "reverse-string-template";
-
 import {
   drop,
   filter,
-  find,
   has,
   indexBy,
   map,
   merge,
   mergeWith,
   prop,
-  propEq,
   values,
 } from "ramda";
+
+import tmpl from "reverse-string-template";
 
 type ParsedGamePlayer = {
   username: string;
@@ -22,6 +20,8 @@ type ParsedGamePlayer = {
   turnTime: number;
   retreatTime: number;
   won: boolean;
+  local: boolean;
+  host: boolean;
 };
 
 type GameType = "match" | "round";
@@ -34,7 +34,7 @@ type ParsedGame = {
 };
 
 export function parseGameLog(log: string): ParsedGame {
-  var [
+  const [
     info,
     teams,
     events,
@@ -56,19 +56,31 @@ export function parseGameLog(log: string): ParsedGame {
     ? info[0]
     : info[1];
   const startedAt = new Date(startedAtLine.replace("Game Started at ", ""));
+
   const playersMap: { [username: string]: ParsedGamePlayer } = indexBy(
     prop("username"),
     filter(
       has("username"),
-      map(
-        (s) => ({
-          ...tmpl(s, '{{teamColor}}: "{{username}}" as "{{teamName}}"', {
+      map((s) => {
+        const { teamColor, username, teamName, flags } = tmpl(
+          s,
+          '{{teamColor}}: "{{username}}" as "{{teamName}}" {{flags}}',
+          {
             whitespace: 1,
-          }),
-          won: false,
-        }),
-        teams
-      )
+          }
+        );
+        return {
+          username,
+          won: winner === teamName,
+          local: flags.includes("Local Player"),
+          host: flags.includes("Host"),
+          teamName,
+          teamColor,
+          turnCount: 0,
+          turnTime: 0,
+          retreatTime: 0,
+        };
+      }, teams)
     )
   );
 
@@ -95,14 +107,6 @@ export function parseGameLog(log: string): ParsedGame {
     "Round time: {{ durationString }}"
   );
   const duration = parseDuration(durationString);
-
-  if (winner) {
-    const { username } = find<ParsedGamePlayer>(
-      propEq("teamName", winner),
-      values(playersMap)
-    );
-    playersMap[username].won = true;
-  }
 
   return {
     startedAt,
