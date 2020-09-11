@@ -18,7 +18,10 @@ import gql from "graphql-tag";
 import { sort } from "ramda";
 
 export default function Games({ games }: { games: Games_GameFragment[] }) {
-  const sortedGames = sort((a, b) => b.startedAt - a.startedAt, games);
+  const sortedGames = sort(
+    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+    games
+  );
   return (
     <TableContainer>
       <Table>

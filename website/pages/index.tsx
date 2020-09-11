@@ -4,6 +4,7 @@ import { HomeQuery, HomeQueryVariables } from "../lib/graphql/generated/client";
 import Games from "../components/Games";
 import Standings from "../components/Standings";
 import gql from "graphql-tag";
+import { initializeApollo } from "../lib/apolloClient";
 import { useQuery } from "@apollo/client";
 
 export const HOME_QUERY = gql`
@@ -45,4 +46,19 @@ export default function Home() {
       </Grid>
     </Container>
   );
+}
+
+export async function getStaticProps() {
+  const apolloClient = initializeApollo();
+
+  await apolloClient.query({
+    query: HOME_QUERY,
+  });
+
+  return {
+    props: {
+      initialApolloState: apolloClient.cache.extract(),
+    },
+    revalidate: 1,
+  };
 }
