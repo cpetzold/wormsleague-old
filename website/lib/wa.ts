@@ -62,19 +62,16 @@ export function parseGameLog(log: string): ParsedGame {
     filter(
       has("username"),
       map((s) => {
-        const { teamColor, username, teamName, flags } = tmpl(
-          s,
-          '{{teamColor}}: "{{username}}" as "{{teamName}}"{{flags}}',
-          {
-            whitespace: 1,
-          }
-        );
+        const playerMatch = /^(\w+):.+"(.+)".+as.+"(.*)"/.exec(s);
+        if (!playerMatch) return null;
+
+        const [_match, teamColor, username, teamName] = playerMatch;
 
         return {
           username,
           won: winner === teamName,
-          local: flags.includes("Local Player"),
-          host: flags.includes("Host"),
+          local: s.includes("[Local Player]"),
+          host: s.includes("[Host]"),
           teamName,
           teamColor,
           turnCount: 0,
