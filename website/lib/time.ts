@@ -1,13 +1,10 @@
-import {
-  addMilliseconds,
-  format,
-  formatDuration,
-  intervalToDuration,
-} from "date-fns";
+import { addMilliseconds, formatDuration, intervalToDuration } from "date-fns";
+
+import { format } from "date-fns-tz";
 
 export function formatDateTime(date: string | Date) {
   date = new Date(date);
-  return format(date, "Pp");
+  return format(date, "yyyy-MM-dd HH:mm:ss zzz");
 }
 
 export function formatDurationFromMs(ms: number) {

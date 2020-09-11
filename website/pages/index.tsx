@@ -1,4 +1,4 @@
-import { Container, Fab, Grid, Paper, Typography } from "@material-ui/core";
+import { Container, Grid, Paper, Typography } from "@material-ui/core";
 import { HomeQuery, HomeQueryVariables } from "../lib/graphql/generated/client";
 
 import Games from "../components/Games";
