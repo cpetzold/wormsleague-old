@@ -46,11 +46,11 @@ export function parseGameLog(log: string): ParsedGame {
     awards,
   ] = log.split("\r\n\r\n").map((s) => s.split("\r\n"));
 
-  const [
-    s_,
-    winner,
-    gameType,
-  ] = /\r\n\r\n([^\r\n]+) wins the (match(?=!)|round(?=\.)).\r\n\r\n/.exec(log);
+  const winnerMatch = /\r\n\r\n([^\r\n]+) wins the (match(?=!)|round(?=\.)).\r\n\r\n/.exec(
+    log
+  );
+  const winner = winnerMatch && winnerMatch[1];
+  const gameType = winnerMatch && winnerMatch[2];
 
   const startedAtLine = info[0].startsWith("Game Started at")
     ? info[0]
@@ -69,6 +69,7 @@ export function parseGameLog(log: string): ParsedGame {
             whitespace: 1,
           }
         );
+
         return {
           username,
           won: winner === teamName,

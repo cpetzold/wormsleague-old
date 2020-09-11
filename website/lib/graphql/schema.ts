@@ -276,13 +276,11 @@ const Mutation = mutationType({
         const form = new FormData();
         form.append("replay", stream, { filename: replayFilename });
 
-        console.log("A");
         const fetchRes = await fetch("http://34.94.165.86:8080/", {
           method: "POST",
           body: form,
           timeout: 5000,
         });
-        console.log("B");
 
         const gameLog = await fetchRes.text();
         const { startedAt, duration, players } = parseGameLog(gameLog);
