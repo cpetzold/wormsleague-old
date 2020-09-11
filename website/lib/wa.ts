@@ -64,7 +64,7 @@ export function parseGameLog(log: string): ParsedGame {
       map((s) => {
         const { teamColor, username, teamName, flags } = tmpl(
           s,
-          '{{teamColor}}: "{{username}}" as "{{teamName}}" {{flags}}',
+          '{{teamColor}}: "{{username}}" as "{{teamName}}"{{flags}}',
           {
             whitespace: 1,
           }
