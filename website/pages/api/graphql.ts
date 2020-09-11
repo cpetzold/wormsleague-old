@@ -3,12 +3,13 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { ApolloServer } from "apollo-server-micro";
 import { PrismaClient } from "@prisma/client";
 import cookieSession from "micro-cookie-session";
+import ms from "ms";
 import schema from "../../lib/graphql/schema";
 import { send } from "micro";
 
 const session = cookieSession({
   secret: process.env.SESSION_SECRET,
-  maxAge: 24 * 60 * 60 * 1000,
+  maxAge: ms("1y"),
   httpOnly: false,
 });
 
@@ -32,7 +33,7 @@ const server = new ApolloServer({
 
 export default (
   req: NextApiRequest & { session: Express.Session },
-  res: NextApiResponse,
+  res: NextApiResponse
 ) => {
   session(req, res);
 
