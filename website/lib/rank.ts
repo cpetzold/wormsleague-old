@@ -1,6 +1,7 @@
 import Player, { Match, Outcome, createPlayerFactory } from "glicko-two";
-import { PrismaClient } from "@prisma/client";
 import { filter, mapObjIndexed, sort, sum, values } from "ramda";
+
+import { PrismaClient } from "@prisma/client";
 
 export function ratingImage(rating: number) {
   if (rating > 1800) {
@@ -17,7 +18,7 @@ export function ratingImage(rating: number) {
 export const createGlickoPlayer = createPlayerFactory({
   defaultRating: 1500,
   defaultRatingDeviation: 350,
-  defaultVolatility: 0.06,
+  defaultVolatility: 0.03,
   tau: 0.5,
 });
 
