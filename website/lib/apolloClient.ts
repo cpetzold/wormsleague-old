@@ -25,7 +25,7 @@ function createApolloClient() {
     credentials: "include",
     uri: process.env.API_URL,
     fetchOptions: {
-      credentials: "inlude",
+      credentials: "include",
     },
   });
 

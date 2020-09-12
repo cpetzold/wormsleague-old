@@ -1,5 +1,6 @@
 import { Container, Grid, Paper, Typography } from "@material-ui/core";
 import { HomeQuery, HomeQueryVariables } from "../lib/graphql/generated/client";
+import { addIndex, fromPairs, map, sortWith } from "ramda";
 
 import Games from "../components/Games";
 import Standings from "../components/Standings";
@@ -22,6 +23,8 @@ export const HOME_QUERY = gql`
   ${Standings.fragments.rank}
 `;
 
+const mapIndexed = addIndex(map);
+
 export default function Home() {
   const { data } = useQuery<HomeQuery, HomeQueryVariables>(HOME_QUERY);
 
@@ -38,7 +41,7 @@ export default function Home() {
           </Paper>
         </Grid>
         <Grid item xs>
-          <Typography variant="h6">Games</Typography>
+          <Typography variant="h6">Recent Games</Typography>
           <Paper>
             <Games games={games} />
           </Paper>

@@ -10,6 +10,7 @@ import {
 } from "@material-ui/core";
 
 import Flag from "./Flag";
+import NextLink from "next/link";
 import { Standings_RankFragment } from "../lib/graphql/generated/client";
 import gql from "graphql-tag";
 import { ratingImage } from "../lib/rank";
@@ -40,6 +41,7 @@ export default function Standings({
             (
               {
                 user: { username, countryCode },
+                place,
                 rating,
                 ratingDeviation,
                 wins,
@@ -48,13 +50,19 @@ export default function Standings({
               i
             ) => (
               <TableRow key={username}>
-                <TableCell>{i + 1}</TableCell>
+                <TableCell>{place}</TableCell>
                 <TableCell>
-                  <Box display="flex" alignItems="center">
-                    <img src={ratingImage(rating)} height="24" />
-                    &ensp;
-                    {username}
-                  </Box>
+                  <NextLink href={`/${username}`}>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <img src={ratingImage(rating)} height="24" />
+                      &ensp;
+                      {username}
+                    </Box>
+                  </NextLink>
                 </TableCell>
                 <TableCell>
                   <Flag countryCode={countryCode} />
@@ -85,9 +93,11 @@ Standings.fragments = {
   rank: gql`
     fragment Standings_rank on Rank {
       user {
+        id
         username
         countryCode
       }
+      place
       rating
       ratingDeviation
       ratingVolatility

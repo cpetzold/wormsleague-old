@@ -1,3 +1,4 @@
+import { PrismaClient, Rank as RankType } from "@prisma/client";
 import {
   arg,
   makeSchema,
@@ -14,7 +15,6 @@ import { FileUpload } from "graphql-upload";
 import FormData from "form-data";
 import { GraphQLUpload } from "apollo-server-core";
 import { NowRequest } from "@vercel/node";
-import { PrismaClient } from "@prisma/client";
 import { ServerResponse } from "http";
 import { Storage } from "@google-cloud/storage";
 import bcrypt from "bcrypt";
@@ -68,6 +68,7 @@ const Player = objectType({
   definition(t) {
     t.model.user();
     t.model.rank();
+    t.model.game();
     t.model.snapshotRating();
     t.model.ratingChange();
   },
@@ -84,6 +85,19 @@ const Rank = objectType({
     t.model.wins();
     t.model.losses();
     t.model.playedGames();
+
+    t.field("place", {
+      type: "Int",
+      async resolve({ leagueId, rating }: RankType, _args, { db }: Context) {
+        const ratingsAbove = await db.rank.findMany({
+          select: { rating: true },
+          where: { leagueId, rating: { gt: rating } },
+          distinct: "rating",
+        });
+
+        return ratingsAbove.length + 1;
+      },
+    });
   },
 });
 
@@ -144,6 +158,16 @@ const Query = queryType({
       ) {
         if (!userId) return null;
         return db.user.findOne({ where: { id: userId } });
+      },
+    });
+
+    t.field("user", {
+      type: "User",
+      args: {
+        username: stringArg(),
+      },
+      async resolve(_root, { username }, { db }: Context) {
+        return db.user.findOne({ where: { username } });
       },
     });
 

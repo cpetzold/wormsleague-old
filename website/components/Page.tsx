@@ -4,30 +4,31 @@ import {
   Box,
   Button,
   Fab,
-  PaletteType,
   Snackbar,
   Theme,
   Toolbar,
-  Typography,
   createStyles,
   makeStyles,
-  useMediaQuery,
 } from "@material-ui/core";
 import { useMutation, useQuery } from "@apollo/client";
 
 import AddIcon from "@material-ui/icons/Add";
 import Head from "next/head";
 import LoginDialog from "./LoginDialog";
+import NextLink from "next/link";
 import ReportDialog from "./ReportDialog";
 import SignupDialog from "./SignupDialog";
 import gql from "graphql-tag";
-import { useCookies } from "react-cookie";
 import usePaletteType from "../lib/usePaletteType";
 import { useRouter } from "next/router";
 import { useState } from "react";
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
+    logo: {
+      marginRight: theme.spacing(1),
+      cursor: "pointer",
+    },
     button: {
       margin: theme.spacing(1),
     },
@@ -81,7 +82,17 @@ export default function Page({ children }) {
             alignItems="center"
             flexGrow={1}
           >
-            <img src="/favicon.png" height={40} />
+            <NextLink href="/">
+              <img src="/favicon.png" height={40} className={classes.logo} />
+            </NextLink>
+
+            <Button href="/" className={classes.button}>
+              Standings
+            </Button>
+
+            <Button href="/about" className={classes.button}>
+              About
+            </Button>
           </Box>
 
           <Box display="flex" justifySelf="flex-end" alignItems="center">
