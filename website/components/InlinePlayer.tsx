@@ -23,9 +23,12 @@ export default function InlinePlayer({
         )}
         {player.user.username}
         &ensp;
+        <Typography variant="caption" color="textSecondary">
+          {Math.round(snapshotRating)}&nbsp;
+        </Typography>
         <Typography
           variant="caption"
-          color={ratingChange > 0 ? "textSecondary" : "error"}
+          color={ratingChange > 0 ? "secondary" : "error"}
         >
           {ratingChange > 0 && "+"}
           {Math.round(ratingChange)}
