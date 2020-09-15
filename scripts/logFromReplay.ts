@@ -26,21 +26,22 @@ app.use(async (context) => {
   const { request, response } = context;
   const body = request.body({ type: "form-data" });
 
+  console.log("Reading form data...");
   const formData = await body.value.read();
 
-  console.log({ formData });
   const file = formData.files?.[0];
-  console.log({ file });
-
-  console.log({ body, formData, file });
 
   if (!file || path.extname(file.originalName).toLowerCase() !== ".wagame") {
     return context.throw(Status.BadRequest, "Please supply a .WAgame");
   }
 
+  console.log("Supplied a WAgame...");
+
   if (!file.filename) {
     return context.throw(500);
   }
+
+  console.log("File was valid...");
 
   const replayFilename = file.filename.replace(
     path.extname(file.filename),
@@ -50,19 +51,15 @@ app.use(async (context) => {
     path.extname(file.filename),
     ".log",
   );
-
+  console.log("Renaming...");
   await Deno.rename(file.filename, replayFilename);
-
   console.log(`Extracting log from ${replayFilename}`);
-
   try {
     await exec(
-      `bash -c "docker run --rm -i wa wa-getlog < ${replayFilename} > ${logFilename}"`,
+      `bash -c "sudo docker run --rm -i wa wa-getlog < ${replayFilename} > ${logFilename}"`,
     );
-
     const decoder = new TextDecoder("windows-1252");
     const data = await Deno.readFile(logFilename);
-
     response.body = decoder.decode(data);
   } catch (error) {
     console.log(error);
