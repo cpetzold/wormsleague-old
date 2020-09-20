@@ -1,6 +1,10 @@
 import * as path from "https://deno.land/std/path/mod.ts";
 
-import { Application, Status } from "https://deno.land/x/oak/mod.ts";
+import {
+  Application,
+  Status,
+  isHttpError,
+} from "https://deno.land/x/oak/mod.ts";
 
 import { exec } from "https://deno.land/x/exec/mod.ts";
 
@@ -22,13 +26,32 @@ app.use(async ({ response }, next) => {
   response.headers.set("X-Response-Time", `${ms}ms`);
 });
 
+app.use(async (ctx, next) => {
+  try {
+    await next();
+  } catch (err) {
+    console.log(err);
+    if (isHttpError(err)) {
+      switch (err.status) {
+        case Status.NotFound:
+          // handle NotFound
+          break;
+        default:
+          // handle other statuses
+      }
+    } else {
+      // rethrow if you can't handle the error
+      throw err;
+    }
+  }
+});
+
 app.use(async (context) => {
   const { request, response } = context;
   const body = request.body({ type: "form-data" });
 
   console.log("Reading form data...");
   const formData = await body.value.read();
-
   const file = formData.files?.[0];
 
   if (!file || path.extname(file.originalName).toLowerCase() !== ".wagame") {
