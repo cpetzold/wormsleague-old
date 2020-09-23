@@ -18,7 +18,7 @@ async function main() {
 
   const games = await db.game.findMany();
   const sortedGames = games.sort(
-    (a, b) => a.reportedAt.getTime() - b.reportedAt.getTime()
+    (a, b) => a.startedAt.getTime() - b.startedAt.getTime()
   );
 
   for (const game of sortedGames) {
