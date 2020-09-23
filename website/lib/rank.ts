@@ -11,7 +11,7 @@ import {
 } from "ramda";
 
 export function ratingImage(rating: number) {
-  if (rating > 1800) {
+  if (rating > 1700) {
     return "/star.png";
   } else if (rating > 1600) {
     return "/rank3.png";
