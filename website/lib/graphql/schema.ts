@@ -1,4 +1,8 @@
-import { PrismaClient, Rank as RankType } from "@prisma/client";
+import {
+  Player as PlayerType,
+  PrismaClient,
+  Rank as RankType,
+} from "@prisma/client";
 import {
   arg,
   makeSchema,
@@ -60,6 +64,7 @@ const User = objectType({
     t.model.countryCode();
     t.model.playedGames();
     t.model.ranks();
+    t.model.isAdmin();
   },
 });
 
@@ -69,8 +74,32 @@ const Player = objectType({
     t.model.user();
     t.model.rank();
     t.model.game();
-    t.model.snapshotRating();
-    t.model.ratingChange();
+    t.field("snapshotRating", {
+      type: "Float",
+      nullable: true,
+      async resolve(player: PlayerType, _args, { db }: Context) {
+        const rankState = await db.rankState.findOne({
+          where: {
+            userId_gameId: { userId: player.userId, gameId: player.gameId },
+          },
+        });
+
+        return rankState && rankState.rating - rankState.ratingChange;
+      },
+    });
+    t.field("ratingChange", {
+      type: "Float",
+      nullable: true,
+      async resolve(player: PlayerType, _args, { db }: Context) {
+        const rankState = await db.rankState.findOne({
+          where: {
+            userId_gameId: { userId: player.userId, gameId: player.gameId },
+          },
+        });
+
+        return rankState?.ratingChange;
+      },
+    });
   },
 });
 
@@ -106,7 +135,6 @@ const Game = objectType({
   definition(t) {
     t.model.id();
     t.model.createdAt();
-    t.model.reportedAt();
     t.model.startedAt();
     t.model.duration();
     t.model.players();
@@ -137,7 +165,7 @@ const League = objectType({
     t.model.id();
     t.model.name();
     t.model.ranks();
-    t.model.games();
+    t.model.games({ ordering: { startedAt: true } });
   },
 });
 
@@ -220,7 +248,6 @@ const Mutation = mutationType({
             ranks: {
               create: {
                 league: { connect: { id: league.id } },
-                ...createDefaultRank(),
               },
             },
           },
@@ -255,7 +282,7 @@ const Mutation = mutationType({
 
     t.field("logout", {
       type: "Boolean",
-      async resolve(_root, _args, { req }) {
+      async resolve(_root, _args, { req }: Context) {
         req.session.userId = null;
         return true;
       },
@@ -336,7 +363,6 @@ const Mutation = mutationType({
             league: { connect: { id: league.id } },
             duration,
             startedAt,
-            reportedAt: new Date(),
             replayHash,
             replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.WAgame`,
             logUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.log`,
@@ -372,9 +398,35 @@ const Mutation = mutationType({
           },
         });
 
-        await updateRanks(db, league.id);
+        await updateRanks(db, league.id, startedAt);
 
         return game;
+      },
+    });
+
+    t.field("recomputeRanks", {
+      type: "Boolean",
+      args: {
+        leagueId: stringArg({ required: true }),
+      },
+      async resolve(
+        _root,
+        { leagueId },
+        {
+          db,
+          req: {
+            session: { userId },
+          },
+        }: Context
+      ) {
+        const user = await db.user.findOne({ where: { id: userId } });
+
+        if (!user || !user.isAdmin) {
+          throw new Error("Must be an admin");
+        }
+
+        await updateRanks(db, leagueId);
+        return true;
       },
     });
   },

@@ -1,20 +1,34 @@
-import { Container, Grid, Paper, Typography } from "@material-ui/core";
-import { HomeQuery, HomeQueryVariables } from "../lib/graphql/generated/client";
-import { addIndex, fromPairs, map, sortWith } from "ramda";
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Paper,
+  Typography,
+} from "@material-ui/core";
+import {
+  HomeQuery,
+  HomeQueryVariables,
+  RecomputeRanksMutation,
+  RecomputeRanksMutationVariables,
+} from "../lib/graphql/generated/client";
+import { useMutation, useQuery } from "@apollo/client";
 
 import Games from "../components/Games";
 import Standings from "../components/Standings";
 import gql from "graphql-tag";
-import { initializeApollo } from "../lib/apolloClient";
-import { useQuery } from "@apollo/client";
 
 export const HOME_QUERY = gql`
   query Home {
+    me {
+      isAdmin
+    }
     currentLeague {
+      id
       ranks {
         ...Standings_rank
       }
-      games {
+      games(first: 20, orderBy: { startedAt: desc }) {
         ...Games_game
       }
     }
@@ -23,11 +37,25 @@ export const HOME_QUERY = gql`
   ${Standings.fragments.rank}
 `;
 
-const mapIndexed = addIndex(map);
+const RECOMPUTE_RANKS_MUTATION = gql`
+  mutation RecomputeRanks($leagueId: String!) {
+    recomputeRanks(leagueId: $leagueId)
+  }
+`;
 
 export default function Home() {
   const { data } = useQuery<HomeQuery, HomeQueryVariables>(HOME_QUERY);
+  const [recomputeRanks, { loading: recomputingRanks }] = useMutation<
+    RecomputeRanksMutation,
+    RecomputeRanksMutationVariables
+  >(RECOMPUTE_RANKS_MUTATION, {
+    variables: {
+      leagueId: data?.currentLeague?.id,
+    },
+    refetchQueries: [{ query: HOME_QUERY }],
+  });
 
+  const isAdmin = data?.me?.isAdmin;
   const ranks = data?.currentLeague?.ranks ?? [];
   const games = data?.currentLeague?.games ?? [];
 
@@ -35,13 +63,29 @@ export default function Home() {
     <Container maxWidth={false}>
       <Grid container spacing={5}>
         <Grid item xs>
-          <Typography variant="h6">Standings</Typography>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography variant="h6">Standings</Typography>
+            {isAdmin && (
+              <Button
+                onClick={() => {
+                  recomputeRanks();
+                }}
+                color="secondary"
+                size="small"
+                disabled={recomputingRanks}
+              >
+                Recompute
+              </Button>
+            )}
+          </Box>
           <Paper>
             <Standings ranks={ranks} />
           </Paper>
         </Grid>
         <Grid item xs>
-          <Typography variant="h6">Recent Games</Typography>
+          <Box display="flex" justifyContent="space-between" mb={1}>
+            <Typography variant="h6">Recent Games</Typography>
+          </Box>
           <Paper>
             <Games games={games} />
           </Paper>
@@ -49,22 +93,4 @@ export default function Home() {
       </Grid>
     </Container>
   );
-}
-
-export async function getStaticProps() {
-  const apolloClient = initializeApollo();
-  const staticProps = (props) => ({ props, revalidate: 1 });
-
-  try {
-    await apolloClient.query({
-      query: HOME_QUERY,
-    });
-  } catch (e) {
-    console.log(e);
-    return staticProps({});
-  }
-
-  return staticProps({
-    initialApolloState: apolloClient.cache.extract(),
-  });
 }

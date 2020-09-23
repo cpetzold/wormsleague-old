@@ -43,7 +43,7 @@ export default function Games({ games }: { games: Games_GameFragment[] }) {
               loser,
               duration,
               startedAt,
-              reportedAt,
+              createdAt,
               replayUrl,
               logUrl,
             }) => (
@@ -91,7 +91,7 @@ Games.fragments = {
       }
       duration
       startedAt
-      reportedAt
+      createdAt
       replayUrl
       logUrl
     }

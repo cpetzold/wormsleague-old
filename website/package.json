@@ -8,7 +8,7 @@
     "generate:graphql": "graphql-codegen --config codegen.yml",
     "generate": "npm run generate:prisma && npm run generate:nexus && npm run generate:graphql",
     "dev": "next dev",
-    "migrate": "prisma migrate up --experimental",
+    "migrate": "prisma migrate up --experimental --auto-approve",
     "build": "npm run migrate && npm run generate && next build",
     "start": "next start -p $PORT"
   },

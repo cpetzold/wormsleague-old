@@ -1,6 +1,14 @@
 import Player, { Match, Outcome, createPlayerFactory } from "glicko-two";
-import { PrismaClient } from "@prisma/client";
-import { filter, mapObjIndexed, sort, sum, values } from "ramda";
+import { PrismaClient, RankUpdateInput } from "@prisma/client";
+import {
+  filter,
+  forEachObjIndexed,
+  head,
+  mapObjIndexed,
+  sort,
+  sum,
+  values,
+} from "ramda";
 
 export function ratingImage(rating: number) {
   if (rating > 1800) {
@@ -30,15 +38,48 @@ export function createDefaultRank() {
   return { rating, ratingDeviation, ratingVolatility };
 }
 
-export async function updateRanks(db: PrismaClient, leagueId: string) {
+async function getGlickoPlayer(
+  db: PrismaClient,
+  leagueId: string,
+  userId: string
+) {
+  const rankStates = await db.rankState.findMany({
+    where: { userId, leagueId },
+    take: 1,
+    orderBy: { gameStartedAt: "desc" },
+  });
+  const latestState = head(rankStates);
+
+  return {
+    player: createGlickoPlayer({
+      rating: latestState && latestState.rating,
+      ratingDeviation: latestState && latestState.ratingDeviation,
+      volatility: latestState && latestState.ratingVolatility,
+    }),
+    wins: latestState ? latestState.wins : 0,
+    losses: latestState ? latestState.losses : 0,
+  };
+}
+
+export async function updateRanks(
+  db: PrismaClient,
+  leagueId: string,
+  since?: Date
+) {
   const glickoPlayers: {
     [userId: string]: { player: Player; wins: number; losses: number };
   } = {};
-  const games = await db.game.findMany({ where: { leagueId } });
+  const games = await db.game.findMany({
+    where: { leagueId, startedAt: { gte: since } },
+  });
   const sortedGames = sort(
     (a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
     games
   );
+
+  await db.rankState.deleteMany({
+    where: { gameId: { in: games.map((game) => game.id) } },
+  });
 
   for (const game of sortedGames) {
     const players = await db.player.findMany({ where: { gameId: game.id } });
@@ -46,23 +87,19 @@ export async function updateRanks(db: PrismaClient, leagueId: string) {
     const winner = players.find((p) => p.won);
     const loser = players.find((p) => !p.won);
 
-    glickoPlayers[winner.userId] = glickoPlayers[winner.userId] || {
-      player: createGlickoPlayer(),
-      wins: 0,
-      losses: 0,
-    };
+    glickoPlayers[winner.userId] =
+      glickoPlayers[winner.userId] ||
+      (await getGlickoPlayer(db, leagueId, winner.userId));
 
-    glickoPlayers[loser.userId] = glickoPlayers[loser.userId] || {
-      player: createGlickoPlayer(),
-      wins: 0,
-      losses: 0,
-    };
-
-    const winnerSnapshotRating = glickoPlayers[winner.userId].player.rating;
-    const loserSnapshotRating = glickoPlayers[loser.userId].player.rating;
+    glickoPlayers[loser.userId] =
+      glickoPlayers[loser.userId] ||
+      (await getGlickoPlayer(db, leagueId, loser.userId));
 
     glickoPlayers[winner.userId].wins += 1;
     glickoPlayers[loser.userId].losses += 1;
+
+    const winnerPreviousRating = glickoPlayers[winner.userId].player.rating;
+    const loserPreviousRating = glickoPlayers[loser.userId].player.rating;
 
     const match = new Match(
       glickoPlayers[winner.userId].player,
@@ -71,43 +108,49 @@ export async function updateRanks(db: PrismaClient, leagueId: string) {
     match.reportTeamAWon();
     match.updatePlayerRatings();
 
-    const winnerPlayerUpdate = db.player.update({
-      where: {
-        userId_gameId: { userId: winner.userId, gameId: game.id },
-      },
-      data: {
-        snapshotRating: winnerSnapshotRating,
-        ratingChange:
-          glickoPlayers[winner.userId].player.rating - winnerSnapshotRating,
-      },
-    });
-
-    const loserPlayerUpdate = db.player.update({
-      where: { userId_gameId: { userId: loser.userId, gameId: game.id } },
-      data: {
-        snapshotRating: loserSnapshotRating,
-        ratingChange:
-          glickoPlayers[loser.userId].player.rating - loserSnapshotRating,
-      },
-    });
-
-    await db.$transaction([winnerPlayerUpdate, loserPlayerUpdate]);
-  }
-
-  const rankUpdates = values(
-    mapObjIndexed(({ player, wins, losses }, userId) => {
-      return db.rank.update({
-        where: { userId_leagueId: { userId, leagueId } },
+    function createRankState(userId: string, previousRating: number) {
+      return db.rankState.create({
         data: {
-          wins,
-          losses,
-          rating: player.rating,
-          ratingDeviation: player.ratingDeviation,
-          ratingVolatility: player.volatility,
+          user: { connect: { id: userId } },
+          league: { connect: { id: leagueId } },
+          rank: {
+            connect: { userId_leagueId: { userId: userId, leagueId } },
+          },
+          game: { connect: { id: game.id } },
+          gameStartedAt: game.startedAt,
+          rating: glickoPlayers[userId].player.rating,
+          ratingChange: glickoPlayers[userId].player.rating - previousRating,
+          ratingDeviation: glickoPlayers[userId].player.ratingDeviation,
+          ratingVolatility: glickoPlayers[userId].player.volatility,
+          wins: glickoPlayers[userId].wins,
+          losses: glickoPlayers[userId].losses,
         },
       });
-    }, glickoPlayers)
-  );
+    }
 
-  await db.$transaction(rankUpdates);
+    const winnerRankState = createRankState(
+      winner.userId,
+      winnerPreviousRating
+    );
+    const loserRankState = createRankState(loser.userId, loserPreviousRating);
+
+    await db.$transaction([winnerRankState, loserRankState]);
+  }
+
+  await db.$transaction(
+    values(
+      mapObjIndexed(({ wins, losses, player }, userId) => {
+        return db.rank.update({
+          where: { userId_leagueId: { userId, leagueId } },
+          data: {
+            rating: player.rating,
+            ratingDeviation: player.ratingDeviation,
+            ratingVolatility: player.volatility,
+            wins,
+            losses,
+          },
+        });
+      }, glickoPlayers)
+    )
+  );
 }
