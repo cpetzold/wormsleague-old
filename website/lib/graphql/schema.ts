@@ -27,7 +27,7 @@ import { format } from "date-fns";
 import hasha from "hasha";
 import { login } from "../auth";
 import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
-import { parseGameLog } from "../wa";
+import { parseDuration } from "../wa";
 import ms from "ms";
 
 const SALT_ROUNDS = 10;
@@ -337,6 +337,7 @@ const Mutation = mutationType({
         const gameJson = await fetchRes.json();
         const { startedAt, totalGameTimeElapsed, teams, teamTimeTotals } = gameJson;
 
+
         if (teams.length !== 2) {
           throw new Error("Only 1v1 supported currently");
         }
@@ -348,7 +349,7 @@ const Mutation = mutationType({
           db.league.findMany(),
         ]);
 
-        const filename = `${format(startedAt, "yyyy-MM-dd HH.mm.ss")} [WL - ${
+        const filename = `${format(new Date(startedAt), "yyyy-MM-dd HH.mm.ss")} [WL - ${
           league.name
         }] ${winner.username}, ${loser.username}`;
 
@@ -359,11 +360,11 @@ const Mutation = mutationType({
         const game = await db.game.create({
           data: {
             league: { connect: { id: league.id } },
-            duration: totalGameTimeElapsed,
+            duration: parseDuration(totalGameTimeElapsed),
             startedAt: new Date(startedAt),
             replayHash,
             replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.WAgame`,
-            logUrl: null,
+            logUrl: `n/a`,
             players: {
               create: addIndex(map)(
                 ({
@@ -382,11 +383,11 @@ const Mutation = mutationType({
                         },
                       },
                     },
-                    retreatTime: retreat,
+                    retreatTime: parseDuration(retreat),
                     teamColor: color,
                     teamName: team,
                     turnCount,
-                    turnTime: turn,
+                    turnTime: parseDuration(turn),
                     won: localPlayer,
                   }
                 },
@@ -396,7 +397,7 @@ const Mutation = mutationType({
           },
         });
 
-        await updateRanks(db, league.id, startedAt);
+        await updateRanks(db, league.id, new Date(startedAt));
 
         return game;
       },
