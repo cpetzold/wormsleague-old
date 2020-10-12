@@ -13,7 +13,7 @@ import {
   stringArg,
 } from "@nexus/schema";
 import { createDefaultRank, updateRanks } from "../rank";
-import { head, map } from "ramda";
+import { addIndex, head, map } from "ramda";
 
 import { FileUpload } from "graphql-upload";
 import FormData from "form-data";
@@ -28,6 +28,7 @@ import hasha from "hasha";
 import { login } from "../auth";
 import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
 import { parseGameLog } from "../wa";
+import ms from "ms";
 
 const SALT_ROUNDS = 10;
 
@@ -327,16 +328,16 @@ const Mutation = mutationType({
         const form = new FormData();
         form.append("replay", stream, { filename: replayFilename });
 
-        const fetchRes = await fetch("http://34.94.165.86:8080/", {
+        const fetchRes = await fetch("https://waaas.zemke.io", {
           method: "POST",
           body: form,
-          timeout: 5000,
+          timeout: ms("20s"),
         });
 
-        const gameLog = await fetchRes.text();
-        const { startedAt, duration, players } = parseGameLog(gameLog);
+        const gameJson = await fetchRes.json();
+        const { startedAt, totalGameTimeElapsed, teams, teamTimeTotals } = gameJson;
 
-        if (players.length !== 2) {
+        if (teams.length !== 2) {
           throw new Error("Only 1v1 supported currently");
         }
 
@@ -355,44 +356,41 @@ const Mutation = mutationType({
           destination: `${filename}.WAgame`,
         });
 
-        const logFile = gamesBucket.file(`${filename}.log`);
-        await logFile.save(gameLog);
-
         const game = await db.game.create({
           data: {
             league: { connect: { id: league.id } },
-            duration,
-            startedAt,
+            duration: totalGameTimeElapsed,
+            startedAt: new Date(startedAt),
             replayHash,
             replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.WAgame`,
-            logUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.log`,
+            logUrl: null,
             players: {
-              create: map(
+              create: addIndex(map)(
                 ({
-                  teamName,
-                  teamColor,
-                  local,
-                  turnCount,
-                  turnTime,
-                  retreatTime,
-                }) => ({
-                  user: { connect: { id: local ? userId : loserId } },
-                  rank: {
-                    connect: {
-                      userId_leagueId: {
-                        userId: local ? userId : loserId,
-                        leagueId: league.id,
+                  color,
+                  team,
+                  localPlayer
+                }, i) => {
+                  const { turn, retreat, turnCount } = teamTimeTotals[i]
+                  return {
+                    user: { connect: { id: localPlayer ? userId : loserId } },
+                    rank: {
+                      connect: {
+                        userId_leagueId: {
+                          userId: localPlayer ? userId : loserId,
+                          leagueId: league.id,
+                        },
                       },
                     },
-                  },
-                  retreatTime,
-                  teamColor,
-                  teamName,
-                  turnCount,
-                  turnTime,
-                  won: local,
-                }),
-                players
+                    retreatTime: retreat,
+                    teamColor: color,
+                    teamName: team,
+                    turnCount,
+                    turnTime: turn,
+                    won: localPlayer,
+                  }
+                },
+                teams
               ),
             },
           },
