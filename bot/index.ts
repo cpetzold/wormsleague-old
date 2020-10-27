@@ -3,7 +3,7 @@ import discordIrc from "discord-irc";
 const GENERAL_CHANNEL_ID = "752615473111236718";
 
 const commonConfig = {
-  nickname: "|",
+  nickname: "WL",
   discordToken: process.env.BOT_TOKEN,
   webhooks: {
     [GENERAL_CHANNEL_ID]: process.env.BOT_WEBHOOK,
@@ -22,9 +22,10 @@ discordIrc([
       password: "ELSILRACLIHP",
     },
     channelMapping: {
-      [GENERAL_CHANNEL_ID]: "#partytime",
+      [GENERAL_CHANNEL_ID]: "#anythinggoes",
     },
     ircNickColor: false,
+    commandCharacters: ["!"],
   },
   {
     ...commonConfig,
