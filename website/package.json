@@ -8,7 +8,7 @@
     "generate:graphql": "graphql-codegen --config codegen.yml",
     "generate": "yarn generate:prisma && yarn generate:nexus && yarn generate:graphql",
     "dev": "next dev",
-    "migrate": "prisma migrate up --experimental --auto-approve",
+    "migrate": "prisma migrate deploy",
     "build": "yarn migrate && yarn generate && next build",
     "start": "next start"
   },
