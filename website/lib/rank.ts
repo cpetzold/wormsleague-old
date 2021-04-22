@@ -1,5 +1,5 @@
 import Player, { Match, Outcome, createPlayerFactory } from "glicko-two";
-import { PrismaClient, RankUpdateInput } from "@prisma/client";
+import { PrismaClient, RankState, RankUpdateInput } from "@prisma/client";
 import {
   filter,
   forEachObjIndexed,
@@ -38,26 +38,15 @@ export function createDefaultRank() {
   return { rating, ratingDeviation, ratingVolatility };
 }
 
-async function getGlickoPlayer(
-  db: PrismaClient,
-  leagueId: string,
-  userId: string
-) {
-  const rankStates = await db.rankState.findMany({
-    where: { userId, leagueId },
-    take: 1,
-    orderBy: { gameStartedAt: "desc" },
-  });
-  const latestState = head(rankStates);
-
+function getGlickoPlayer(rankState: RankState) {
   return {
     player: createGlickoPlayer({
-      rating: latestState && latestState.rating,
-      ratingDeviation: latestState && latestState.ratingDeviation,
-      volatility: latestState && latestState.ratingVolatility,
+      rating: rankState && rankState.rating,
+      ratingDeviation: rankState && rankState.ratingDeviation,
+      volatility: rankState && rankState.ratingVolatility,
     }),
-    wins: latestState ? latestState.wins : 0,
-    losses: latestState ? latestState.losses : 0,
+    wins: rankState ? rankState.wins : 0,
+    losses: rankState ? rankState.losses : 0,
   };
 }
 
@@ -72,6 +61,8 @@ export async function updateRanks(
   const games = await db.game.findMany({
     where: { leagueId, startedAt: { gte: since } },
   });
+  const allPlayers = await db.player.findMany();
+
   const sortedGames = sort(
     (a, b) => a.startedAt.getTime() - b.startedAt.getTime(),
     games
@@ -81,19 +72,33 @@ export async function updateRanks(
     where: { gameId: { in: games.map((game) => game.id) } },
   });
 
-  for (const game of sortedGames) {
-    const players = await db.player.findMany({ where: { gameId: game.id } });
+  const allRankStates = await db.rankState.findMany({
+    orderBy: { gameStartedAt: "desc" },
+  });
 
-    const winner = players.find((p) => p.won);
-    const loser = players.find((p) => !p.won);
+  const newRankStates = [];
+
+  console.time("updateRanks");
+
+  for (const game of sortedGames) {
+    const winner = allPlayers.find((p) => p.gameId === game.id && p.won);
+    const loser = allPlayers.find((p) => p.gameId === game.id && !p.won);
 
     glickoPlayers[winner.userId] =
       glickoPlayers[winner.userId] ||
-      (await getGlickoPlayer(db, leagueId, winner.userId));
+      getGlickoPlayer(
+        allRankStates.find(
+          (r) => r.userId === winner.userId && r.leagueId === leagueId
+        )
+      );
 
     glickoPlayers[loser.userId] =
       glickoPlayers[loser.userId] ||
-      (await getGlickoPlayer(db, leagueId, loser.userId));
+      getGlickoPlayer(
+        allRankStates.find(
+          (r) => r.userId === loser.userId && r.leagueId === leagueId
+        )
+      );
 
     glickoPlayers[winner.userId].wins += 1;
     glickoPlayers[loser.userId].losses += 1;
@@ -109,23 +114,21 @@ export async function updateRanks(
     match.updatePlayerRatings();
 
     function createRankState(userId: string, previousRating: number) {
-      return db.rankState.create({
-        data: {
-          user: { connect: { id: userId } },
-          league: { connect: { id: leagueId } },
-          rank: {
-            connect: { userId_leagueId: { userId: userId, leagueId } },
-          },
-          game: { connect: { id: game.id } },
-          gameStartedAt: game.startedAt,
-          rating: glickoPlayers[userId].player.rating,
-          ratingChange: glickoPlayers[userId].player.rating - previousRating,
-          ratingDeviation: glickoPlayers[userId].player.ratingDeviation,
-          ratingVolatility: glickoPlayers[userId].player.volatility,
-          wins: glickoPlayers[userId].wins,
-          losses: glickoPlayers[userId].losses,
+      return {
+        user: { connect: { id: userId } },
+        league: { connect: { id: leagueId } },
+        rank: {
+          connect: { userId_leagueId: { userId: userId, leagueId } },
         },
-      });
+        game: { connect: { id: game.id } },
+        gameStartedAt: game.startedAt,
+        rating: glickoPlayers[userId].player.rating,
+        ratingChange: glickoPlayers[userId].player.rating - previousRating,
+        ratingDeviation: glickoPlayers[userId].player.ratingDeviation,
+        ratingVolatility: glickoPlayers[userId].player.volatility,
+        wins: glickoPlayers[userId].wins,
+        losses: glickoPlayers[userId].losses,
+      };
     }
 
     const winnerRankState = createRankState(
@@ -134,8 +137,10 @@ export async function updateRanks(
     );
     const loserRankState = createRankState(loser.userId, loserPreviousRating);
 
-    await db.$transaction([winnerRankState, loserRankState]);
+    newRankStates.concat([winnerRankState, loserRankState]);
   }
+
+  console.timeEnd("updateRanks");
 
   await db.$transaction(
     values(

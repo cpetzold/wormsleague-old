@@ -1,24 +1,25 @@
-import {
-  Player as PlayerType,
-  PrismaClient,
-  Rank as RankType,
-} from "@prisma/client";
+import * as np from "nexus-prisma";
+import * as pc from "@prisma/client";
+
+import { addIndex, head, map } from "ramda";
 import {
   arg,
+  list,
   makeSchema,
   mutationType,
+  nonNull,
   objectType,
   queryType,
   scalarType,
   stringArg,
-} from "@nexus/schema";
-import { createDefaultRank, updateRanks } from "../rank";
-import { addIndex, head, map } from "ramda";
+} from "nexus";
 
 import { FileUpload } from "graphql-upload";
 import FormData from "form-data";
 import { GraphQLUpload } from "apollo-server-core";
+import NexusPrismaScalars from "nexus-prisma/scalars";
 import { NowRequest } from "@vercel/node";
+import { ObjectDefinitionBlock } from "nexus/dist/blocks";
 import { ServerResponse } from "http";
 import { Storage } from "@google-cloud/storage";
 import bcrypt from "bcrypt";
@@ -26,9 +27,9 @@ import fetch from "node-fetch";
 import { format } from "date-fns";
 import hasha from "hasha";
 import { login } from "../auth";
-import { nexusSchemaPrisma } from "nexus-plugin-prisma/schema";
-import { parseDuration } from "../wa";
 import ms from "ms";
+import { parseDuration } from "../wa";
+import { updateRanks } from "../rank";
 
 const SALT_ROUNDS = 10;
 
@@ -45,7 +46,7 @@ const gamesBucket = storage.bucket("games.wormsleague.com");
 type Context = {
   req: NowRequest & { session: Express.Session };
   res: ServerResponse;
-  db: PrismaClient;
+  db: pc.PrismaClient;
 };
 
 const Upload = scalarType({
@@ -58,28 +59,65 @@ const Upload = scalarType({
 });
 
 const User = objectType({
-  name: "User",
+  name: np.User.$name,
   definition(t) {
-    t.model.id();
-    t.model.username();
-    t.model.countryCode();
-    t.model.playedGames();
-    t.model.ranks();
-    t.model.isAdmin();
+    const { id, username, countryCode, isAdmin, ranks } = np.User;
+
+    t.field(id.name, id);
+    t.field(username.name, username);
+    t.field(countryCode.name, countryCode);
+    t.field(isAdmin.name, isAdmin);
+
+    t.field(ranks.name, {
+      type: nonNull(list(nonNull(np.Rank.$name))),
+      resolve(user: pc.User, args, { db }: Context) {
+        return db.rank.findMany({ where: { userId: user.id } });
+      },
+    });
   },
 });
 
 const Player = objectType({
-  name: "Player",
+  name: np.Player.$name,
   definition(t) {
-    t.model.user();
-    t.model.rank();
-    t.model.game();
+    const { user, rank, game } = np.Player;
+
+    t.field(user.name, {
+      type: user.type,
+      resolve(player: pc.Player, _args, { db }: Context) {
+        return db.user.findUnique({ where: { id: player.userId } });
+      },
+    });
+
+    t.field(rank.name, {
+      type: rank.type,
+      resolve(player: pc.Player, _args, { db }: Context) {
+        return db.rank.findUnique({
+          where: {
+            userId_leagueId: {
+              leagueId: player.leagueId,
+              userId: player.userId,
+            },
+          },
+        });
+      },
+    });
+
+    t.field(game.name, {
+      type: game.type,
+      resolve(player: pc.Player, _args, { db }: Context) {
+        return db.game.findUnique({
+          where: {
+            id: player.gameId,
+          },
+        });
+      },
+    });
+
     t.field("snapshotRating", {
       type: "Float",
-      nullable: true,
-      async resolve(player: PlayerType, _args, { db }: Context) {
-        const rankState = await db.rankState.findOne({
+      async resolve(player: pc.Player, _args, { db }: Context) {
+        const rankState = await db.rankState.findUnique({
           where: {
             userId_gameId: { userId: player.userId, gameId: player.gameId },
           },
@@ -88,11 +126,11 @@ const Player = objectType({
         return rankState && rankState.rating - rankState.ratingChange;
       },
     });
+
     t.field("ratingChange", {
       type: "Float",
-      nullable: true,
-      async resolve(player: PlayerType, _args, { db }: Context) {
-        const rankState = await db.rankState.findOne({
+      async resolve(player: pc.Player, _args, { db }: Context) {
+        const rankState = await db.rankState.findUnique({
           where: {
             userId_gameId: { userId: player.userId, gameId: player.gameId },
           },
@@ -105,20 +143,43 @@ const Player = objectType({
 });
 
 const Rank = objectType({
-  name: "Rank",
+  name: np.Rank.$name,
   definition(t) {
-    t.model.user();
-    t.model.league();
-    t.model.rating();
-    t.model.ratingDeviation();
-    t.model.ratingVolatility();
-    t.model.wins();
-    t.model.losses();
-    t.model.playedGames();
+    const {
+      user,
+      rating,
+      ratingDeviation,
+      ratingVolatility,
+      wins,
+      losses,
+      playedGames,
+    } = np.Rank;
+
+    t.field(rating.name, rating);
+    t.field(ratingDeviation.name, ratingDeviation);
+    t.field(ratingVolatility.name, ratingVolatility);
+    t.field(wins.name, wins);
+    t.field(losses.name, losses);
+
+    t.field(user.name, {
+      type: user.type,
+      resolve(rank: pc.Rank, _args, { db }: Context) {
+        return db.user.findUnique({ where: { id: rank.userId } });
+      },
+    });
+
+    t.field(playedGames.name, {
+      type: nonNull(list(nonNull(np.Player.$name))),
+      resolve(rank: pc.Rank, _args, { db }: Context) {
+        return db.player.findMany({
+          where: { userId: rank.userId, leagueId: rank.leagueId },
+        });
+      },
+    });
 
     t.field("place", {
       type: "Int",
-      async resolve({ leagueId, rating }: RankType, _args, { db }: Context) {
+      async resolve({ leagueId, rating }: pc.Rank, _args, { db }: Context) {
         const ratingsAbove = await db.rank.findMany({
           select: { rating: true },
           where: { leagueId, rating: { gt: rating } },
@@ -132,17 +193,18 @@ const Rank = objectType({
 });
 
 const Game = objectType({
-  name: "Game",
+  name: np.Game.$name,
   definition(t) {
-    t.model.id();
-    t.model.createdAt();
-    t.model.startedAt();
-    t.model.duration();
-    t.model.players();
-    t.model.replayUrl();
-    t.model.logUrl();
+    const { id, createdAt, startedAt, duration, replayUrl, logUrl } = np.Game;
+    t.field(id.name, id);
+    t.field(createdAt.name, createdAt);
+    t.field(startedAt.name, startedAt);
+    t.field(duration.name, duration);
+    t.field(replayUrl.name, replayUrl);
+    t.field(logUrl.name, logUrl);
+
     t.field("winner", {
-      type: "Player",
+      type: np.Player.$name,
       async resolve(game, _args, { db }: Context) {
         return head(
           await db.player.findMany({ where: { gameId: game.id, won: true } })
@@ -150,7 +212,7 @@ const Game = objectType({
       },
     });
     t.field("loser", {
-      type: "Player",
+      type: np.Player.$name,
       async resolve(game, _args, { db }: Context) {
         return head(
           await db.player.findMany({ where: { gameId: game.id, won: false } })
@@ -161,20 +223,40 @@ const Game = objectType({
 });
 
 const League = objectType({
-  name: "League",
+  name: np.League.$name,
   definition(t) {
-    t.model.id();
-    t.model.name();
-    t.model.ranks();
-    t.model.games({ ordering: { startedAt: true } });
+    const { id, name, ranks, games } = np.League;
+
+    t.field(id.name, id);
+    t.field(name.name, name);
+    t.field(ranks.name, {
+      type: nonNull(list(nonNull(np.Rank.$name))),
+      resolve(league: pc.League, _args, { db }: Context) {
+        return db.rank.findMany({ where: { leagueId: league.id } });
+      },
+    });
+
+    t.field(games.name, {
+      type: nonNull(list(nonNull(np.Game.$name))),
+      resolve(league: pc.League, {}, { db }: Context) {
+        return db.game.findMany({
+          where: {
+            leagueId: league.id,
+          },
+          take: 20,
+          orderBy: {
+            startedAt: "desc",
+          },
+        });
+      },
+    });
   },
 });
 
 const Query = queryType({
   definition(t) {
     t.field("me", {
-      type: "User",
-      nullable: true,
+      type: User,
       async resolve(
         _root,
         _args,
@@ -186,32 +268,31 @@ const Query = queryType({
         }: Context
       ) {
         if (!userId) return null;
-        return db.user.findOne({ where: { id: userId } });
+        return db.user.findUnique({ where: { id: userId } });
       },
     });
 
     t.field("user", {
-      type: "User",
+      type: User,
       args: {
-        username: stringArg(),
+        username: nonNull(stringArg()),
       },
       async resolve(_root, { username }, { db }: Context) {
-        return db.user.findOne({ where: { username } });
+        return db.user.findUnique({ where: { username } });
       },
     });
 
-    t.list.field("users", {
-      type: "User",
+    t.field("users", {
+      type: nonNull(list(nonNull(User))),
       resolve(_root, _args, { db }: Context) {
         return db.user.findMany();
       },
     });
 
     t.field("currentLeague", {
-      type: "League",
+      type: League,
       async resolve(_root, _args, { db }: Context) {
-        const [league] = await db.league.findMany();
-        return league;
+        return db.league.findFirst();
       },
     });
   },
@@ -220,11 +301,11 @@ const Query = queryType({
 const Mutation = mutationType({
   definition(t) {
     t.field("signup", {
-      type: "User",
+      type: User,
       args: {
-        username: stringArg({ required: true }),
-        email: stringArg({ required: true }),
-        password: stringArg({ required: true }),
+        username: nonNull(stringArg()),
+        email: nonNull(stringArg()),
+        password: nonNull(stringArg()),
         countryCode: stringArg(),
         avatar: stringArg(),
       },
@@ -261,10 +342,10 @@ const Mutation = mutationType({
     });
 
     t.field("login", {
-      type: "User",
+      type: User,
       args: {
-        usernameOrEmail: stringArg({ required: true }),
-        password: stringArg({ required: true }),
+        usernameOrEmail: nonNull(stringArg()),
+        password: nonNull(stringArg()),
       },
       async resolve(
         _root,
@@ -290,10 +371,10 @@ const Mutation = mutationType({
     });
 
     t.field("reportWin", {
-      type: "Game",
+      type: Game,
       args: {
-        loserId: stringArg({ required: true }),
-        replay: arg({ type: "Upload", required: true }),
+        loserId: nonNull(stringArg()),
+        replay: nonNull(arg({ type: "Upload" })),
       },
       async resolve(
         _root,
@@ -335,8 +416,12 @@ const Mutation = mutationType({
         });
 
         const gameJson = await fetchRes.json();
-        const { startedAt, totalGameTimeElapsed, teams, teamTimeTotals } = gameJson;
-
+        const {
+          startedAt,
+          totalGameTimeElapsed,
+          teams,
+          teamTimeTotals,
+        } = gameJson;
 
         if (teams.length !== 2) {
           throw new Error("Only 1v1 supported currently");
@@ -344,14 +429,15 @@ const Mutation = mutationType({
 
         // TODO: Support more leagues
         const [winner, loser, [league]] = await Promise.all([
-          db.user.findOne({ where: { id: userId } }),
-          db.user.findOne({ where: { id: loserId } }),
+          db.user.findUnique({ where: { id: userId } }),
+          db.user.findUnique({ where: { id: loserId } }),
           db.league.findMany(),
         ]);
 
-        const filename = `${format(new Date(startedAt), "yyyy-MM-dd HH.mm.ss")} [WL - ${
-          league.name
-        }] ${winner.username}, ${loser.username}`;
+        const filename = `${format(
+          new Date(startedAt),
+          "yyyy-MM-dd HH.mm.ss"
+        )} [WL - ${league.name}] ${winner.username}, ${loser.username}`;
 
         await gamesBucket.upload(stream.path as string, {
           destination: `${filename}.WAgame`,
@@ -366,33 +452,26 @@ const Mutation = mutationType({
             replayUrl: `https://storage.googleapis.com/${gamesBucket.name}/${filename}.WAgame`,
             logUrl: `n/a`,
             players: {
-              create: addIndex(map)(
-                ({
-                  color,
-                  team,
-                  localPlayer
-                }, i) => {
-                  const { turn, retreat, turnCount } = teamTimeTotals[i]
-                  return {
-                    user: { connect: { id: localPlayer ? userId : loserId } },
-                    rank: {
-                      connect: {
-                        userId_leagueId: {
-                          userId: localPlayer ? userId : loserId,
-                          leagueId: league.id,
-                        },
+              create: addIndex(map)(({ color, team, localPlayer }, i) => {
+                const { turn, retreat, turnCount } = teamTimeTotals[i];
+                return {
+                  user: { connect: { id: localPlayer ? userId : loserId } },
+                  rank: {
+                    connect: {
+                      userId_leagueId: {
+                        userId: localPlayer ? userId : loserId,
+                        leagueId: league.id,
                       },
                     },
-                    retreatTime: parseDuration(retreat),
-                    teamColor: color,
-                    teamName: team,
-                    turnCount,
-                    turnTime: parseDuration(turn),
-                    won: localPlayer,
-                  }
-                },
-                teams
-              ),
+                  },
+                  retreatTime: parseDuration(retreat),
+                  teamColor: color,
+                  teamName: team,
+                  turnCount,
+                  turnTime: parseDuration(turn),
+                  won: localPlayer,
+                };
+              }, teams),
             },
           },
         });
@@ -406,7 +485,7 @@ const Mutation = mutationType({
     t.field("recomputeRanks", {
       type: "Boolean",
       args: {
-        leagueId: stringArg({ required: true }),
+        leagueId: nonNull(stringArg()),
       },
       async resolve(
         _root,
@@ -418,7 +497,7 @@ const Mutation = mutationType({
           },
         }: Context
       ) {
-        const user = await db.user.findOne({ where: { id: userId } });
+        const user = await db.user.findUnique({ where: { id: userId } });
 
         if (!user || !user.isAdmin) {
           throw new Error("Must be an admin");
@@ -432,10 +511,19 @@ const Mutation = mutationType({
 });
 
 export default makeSchema({
-  types: [Query, Mutation, User, Player, Game, Upload, Rank, League],
+  types: [
+    NexusPrismaScalars,
+    Query,
+    Mutation,
+    User,
+    Player,
+    Game,
+    Upload,
+    Rank,
+    League,
+  ],
   outputs: {
     schema: __dirname + "/generated/schema.graphql",
     typegen: __dirname + "/generated/typings.ts",
   },
-  plugins: [nexusSchemaPrisma()],
 });

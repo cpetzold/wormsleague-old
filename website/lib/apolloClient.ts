@@ -23,7 +23,7 @@ function createApolloClient() {
 
   const uploadLink = createUploadLink({
     credentials: "include",
-    uri: process.env.API_URL,
+    uri: "/api/graphql",
     fetchOptions: {
       credentials: "include",
     },

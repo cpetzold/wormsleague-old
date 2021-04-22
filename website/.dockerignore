@@ -1,6 +1,4 @@
 Dockerfile
-README.md
+.dockerignore
 node_modules
-*.log
-.next
-.vscode
+npm-debug.log

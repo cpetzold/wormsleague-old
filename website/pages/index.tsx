@@ -28,7 +28,7 @@ export const HOME_QUERY = gql`
       ranks {
         ...Standings_rank
       }
-      games(first: 20, orderBy: { startedAt: desc }) {
+      games {
         ...Games_game
       }
     }

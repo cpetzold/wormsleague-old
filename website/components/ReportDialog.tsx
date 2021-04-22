@@ -19,11 +19,11 @@ import {
   ReportWinMutationVariables,
 } from "../lib/graphql/generated/client";
 import { useMutation, useQuery } from "@apollo/client";
+import { useRef, useState } from "react";
 
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import { HOME_QUERY } from "../pages/index";
 import gql from "graphql-tag";
-import { useState, useRef } from "react";
 
 const REPORT_QUERY = gql`
   query Report {
@@ -67,7 +67,7 @@ export default function ReportDialog({ open, onSuccess, onClose }) {
   const { loading: dataLoading, data } = useQuery<
     ReportQuery,
     ReportQueryVariables
-  >(REPORT_QUERY);
+  >(REPORT_QUERY, { skip: !open });
   const [loser, setLoser] = useState(null);
   const [replay, setReplay] = useState<File>(null);
 

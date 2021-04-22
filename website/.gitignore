@@ -36,3 +36,5 @@ failed-inferMigrationSteps*
 generated
 
 wormsleague-gcp.json
+
+env.yaml
