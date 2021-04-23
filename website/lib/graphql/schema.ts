@@ -319,7 +319,7 @@ const Mutation = mutationType({
           throw new Error("Already logged in");
         }
 
-        const [league] = await db.league.findMany();
+        const league = await db.league.findFirst();
 
         const user = await db.user.create({
           data: {

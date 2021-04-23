@@ -67,7 +67,7 @@ export default function ReportDialog({ open, onSuccess, onClose }) {
   const { loading: dataLoading, data } = useQuery<
     ReportQuery,
     ReportQueryVariables
-  >(REPORT_QUERY, { skip: !open });
+  >(REPORT_QUERY);
   const [loser, setLoser] = useState(null);
   const [replay, setReplay] = useState<File>(null);
 
