@@ -23,7 +23,7 @@ import { ServerResponse } from "http";
 import { Session } from "express-session";
 import { Storage } from "@google-cloud/storage";
 import { VercelRequest } from "@vercel/node";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import fetch from "node-fetch";
 import { format } from "date-fns";
 import hasha from "hasha";
