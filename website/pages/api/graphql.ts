@@ -33,10 +33,7 @@ const server = new ApolloServer({
 
 const handler = server.createHandler({ path: "/api/graphql" });
 
-export default (
-  req: NextApiRequest & { session: Express.Session },
-  res: NextApiResponse
-) => {
+export default (req: NextApiRequest, res: NextApiResponse) => {
   session(req, res);
 
   if (req.method === "OPTIONS") {

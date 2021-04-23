@@ -18,10 +18,11 @@ import { FileUpload } from "graphql-upload";
 import FormData from "form-data";
 import { GraphQLUpload } from "apollo-server-core";
 import NexusPrismaScalars from "nexus-prisma/scalars";
-import { NowRequest } from "@vercel/node";
 import { ObjectDefinitionBlock } from "nexus/dist/blocks";
 import { ServerResponse } from "http";
+import { Session } from "express-session";
 import { Storage } from "@google-cloud/storage";
+import { VercelRequest } from "@vercel/node";
 import bcrypt from "bcrypt";
 import fetch from "node-fetch";
 import { format } from "date-fns";
@@ -44,7 +45,7 @@ const storage = new Storage({
 const gamesBucket = storage.bucket("games.wormsleague.com");
 
 type Context = {
-  req: NowRequest & { session: Express.Session };
+  req: VercelRequest & { session: Session & { userId: string } };
   res: ServerResponse;
   db: pc.PrismaClient;
 };

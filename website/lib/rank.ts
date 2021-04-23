@@ -1,5 +1,5 @@
-import Player, { Match, Outcome, createPlayerFactory } from "glicko-two";
-import { PrismaClient, RankState, RankUpdateInput } from "@prisma/client";
+import Player, { Match, createPlayerFactory } from "glicko-two";
+import { PrismaClient, RankState } from "@prisma/client";
 import {
   filter,
   forEachObjIndexed,

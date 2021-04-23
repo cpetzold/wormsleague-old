@@ -57,9 +57,11 @@ export function parseGameLog(log: string): ParsedGame {
     : info[1];
   const startedAt = new Date(startedAtLine.replace("Game Started at ", ""));
 
-  const playersMap: { [username: string]: ParsedGamePlayer } = indexBy(
+  const playersMap: {
+    [username: string]: ParsedGamePlayer;
+  } = indexBy<ParsedGamePlayer>(
     prop("username"),
-    filter(
+    filter<ParsedGamePlayer>(
       has("username"),
       map((s) => {
         const playerMatch = /^(\w+):.+"(.+)".+as.+"(.*)"/.exec(s);
