@@ -68,9 +68,9 @@ model League {
 model Rank {
   userId           String
   leagueId         String
-  rating           Decimal     @default(0)
-  ratingDeviation  Decimal     @default(0)
-  ratingVolatility Decimal     @default(0)
+  rating           Float       @default(0)
+  ratingDeviation  Float       @default(0)
+  ratingVolatility Float       @default(0)
   wins             Int         @default(0)
   losses           Int         @default(0)
   league           League      @relation(fields: [leagueId], references: [id])
@@ -86,10 +86,10 @@ model RankState {
   leagueId         String
   gameId           String
   gameStartedAt    DateTime
-  rating           Decimal  @default(0)
-  ratingChange     Decimal  @default(0)
-  ratingDeviation  Decimal  @default(0)
-  ratingVolatility Decimal  @default(0)
+  rating           Float    @default(0)
+  ratingChange     Float    @default(0)
+  ratingDeviation  Float    @default(0)
+  ratingVolatility Float    @default(0)
   wins             Int      @default(0)
   losses           Int      @default(0)
   game             Game     @relation(fields: [gameId], references: [id])
