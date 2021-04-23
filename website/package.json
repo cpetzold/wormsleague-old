@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "generate:prisma": "prisma generate",
-    "generate:nexus": "ts-node --transpile-only lib/graphql/schema",
+    "generate:nexus": "ts-node lib/graphql/schema --generate-artifacts",
     "generate:graphql": "graphql-codegen --config codegen.yml",
     "generate": "yarn generate:prisma && yarn generate:nexus && yarn generate:graphql",
     "dev": "next dev",
